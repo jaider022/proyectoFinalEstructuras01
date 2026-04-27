@@ -1,0 +1,262 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PropTech Dashboard | Gestión Inmobiliaria</title>
+    <link rel="stylesheet" href="style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600&display=swap" rel="stylesheet">
+</head>
+<body>
+    <div class="app-container">
+        <!-- Sidebar -->
+        <aside class="sidebar">
+            <div class="logo">
+                <span class="logo-icon">🏠</span>
+                <h1>PropTech</h1>
+            </div>
+            <nav>
+                <ul>
+                    <li class="active" data-view="dashboard">Dashboard</li>
+                    <li data-view="inmuebles">Inmuebles</li>
+                    <li data-view="clientes">Clientes</li>
+                    <li data-view="analetica">Analítica</li>
+                </ul>
+            </nav>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <header>
+                <div class="search-bar">
+                    <input type="text" placeholder="Buscar inmuebles o clientes...">
+                </div>
+                <div class="user-actions">
+                    <button id="btn-add-prop" class="primary-btn admin-only" style="display:none">+ Nuevo Inmueble</button>
+                    <div class="role-toggle">
+                        <span id="role-label">Administrador</span>
+                        <label class="switch">
+                            <input type="checkbox" id="role-switcher" checked>
+                            <span class="slider round"></span>
+                        </label>
+                    </div>
+                    <div class="user-profile">
+                        <div class="avatar">A</div>
+                    </div>
+                </div>
+            </header>
+
+            <section id="content-area">
+                <!-- VISTA 1: DASHBOARD -->
+                <div id="view-dashboard" class="content-view">
+                    <!-- ... stats ... -->
+                    <div class="stats-grid">
+                        <div class="stat-card">
+                            <h3>Propiedades</h3>
+                            <p id="stat-props">...</p>
+                        </div>
+                        <div class="stat-card">
+                            <h3>Clientes</h3>
+                            <p id="stat-clients">...</p>
+                        </div>
+                        <div class="stat-card">
+                            <h3>Operaciones</h3>
+                            <p id="stat-ops">8 Cierres</p>
+                        </div>
+                    </div>
+                    
+                    <h2 class="section-title">Inmuebles Destacados</h2>
+                    <div class="property-grid" id="featured-props"></div>
+                </div>
+                <!-- ... other views ... -->
+                <div id="view-inmuebles" class="content-view" style="display:none">
+                    <h2 class="section-title">Catálogo Completo</h2>
+                    <div class="property-grid" id="all-props-grid"></div>
+                </div>
+                <div id="view-clientes" class="content-view" style="display:none">
+                    <h2 class="section-title">Directorio de Clientes</h2>
+                    <div id="clients-list" class="stats-grid"></div>
+                </div>
+                <div id="view-analetica" class="content-view" style="display:none">
+                    <h2 class="section-title">Motor de Analítica</h2>
+                    <div class="stat-card" id="analytics-card">
+                        <h3>Estado del Sistema</h3>
+                        <p>Óptimo (Basado en Grafos y BST)</p>
+                    </div>
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <!-- MODAL DE REGISTRO (GUEST WALL) -->
+    <div id="modal-register" class="overlay">
+        <div class="modal">
+            <h2>Bienvenido a PropTech</h2>
+            <p>Por favor, regístrate para navegar en nuestro catálogo exclusivo.</p>
+            <form id="form-register">
+                <input type="text" name="id" placeholder="Identificación" required>
+                <input type="text" name="nom" placeholder="Nombre Completo" required>
+                <input type="email" name="cor" placeholder="Correo Electrónico" required>
+                <input type="text" name="tel" placeholder="Teléfono" required>
+                <button type="submit" class="primary-btn">Comenzar a Explorar</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- MODAL DE DETALLES -->
+    <div id="modal-details" class="overlay" style="display:none">
+        <div class="modal modal-xl">
+            <span class="close-btn">&times;</span>
+            <div class="details-layout">
+                <div class="gallery" id="prop-gallery">
+                    <div class="main-img" id="main-detail-img"></div>
+                    <div class="thumb-grid" id="thumb-grid"></div>
+                    <div class="crop-controls">
+                        <label>Encuadre: </label>
+                        <input type="range" id="img-pos-slider" min="0" max="100" value="50">
+                    </div>
+                </div>
+                <div class="info">
+                    <h2 id="detail-title">Cargando...</h2>
+                    <!-- ... rest of info ... -->
+                    <p class="price" id="detail-price"></p>
+                    <div class="tags" id="detail-tags"></div>
+                    <div class="meta-info" id="detail-meta">
+                        <!-- Ciudad, Area, etc. -->
+                    </div>
+                    <p class="description" id="detail-desc">Esta propiedad cuenta con acabados de lujo y una ubicación privilegiada. Ideal para inversión o vivienda familiar.</p>
+                    
+                    <div class="contact-box">
+                        <h4>Contacto</h4>
+                        <p id="detail-contact">Cargando...</p>
+                    </div>
+
+                    <div class="actions-box" style="margin-top: 20px; display: flex; gap: 10px;">
+                        <button class="primary-btn" id="btn-schedule-visit">📅 Agendar Visita</button>
+                        <button class="secondary-btn admin-only" id="btn-change-status" style="display:none">📝 Cerrar Negocio</button>
+                        <button class="secondary-btn admin-only" id="btn-edit-prop" style="display:none">✏️ Editar</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL AGREGAR INMUEBLE (ADMIN) -->
+    <div id="modal-add-prop" class="overlay" style="display:none">
+        <div class="modal">
+            <span class="close-btn" id="close-add-prop">&times;</span>
+            <h2>Agregar Nuevo Inmueble</h2>
+            <form id="form-add-prop">
+                <div class="form-grid">
+                    <input type="text" name="cod" placeholder="Código (ej: INM-100)" required>
+                    <input type="text" name="dir" placeholder="Dirección" required>
+                    <input type="text" name="ciu" placeholder="Ciudad" required>
+                    <select name="tip" required>
+                        <option value="" disabled selected>Tipo de Inmueble</option>
+                        <option value="Casa">Casa</option>
+                        <option value="Apartamento">Apartamento</option>
+                        <option value="Lote">Lote/Terreno</option>
+                        <option value="Local">Local Comercial</option>
+                    </select>
+                    <input type="number" name="pre" placeholder="Precio ($)" required>
+                    <input type="text" name="zon" placeholder="Zona/Barrio" required>
+                    <select name="fin" required>
+                        <option value="" disabled selected>Finalidad</option>
+                        <option value="Venta">Venta</option>
+                        <option value="Arriendo">Arriendo</option>
+                    </select>
+                    <input type="number" name="are" placeholder="Área Construida (m²)" required>
+                    <input type="number" name="areT" placeholder="Área Terreno (m²)" required>
+                    <input type="number" name="hab" placeholder="Habitaciones" required>
+                    <input type="number" name="ban" placeholder="Baños" required>
+                    <select name="est" required>
+                        <option value="Disponible">Disponible</option>
+                        <option value="Reservado">Reservado</option>
+                        <option value="Arrendado">Arrendado</option>
+                    </select>
+                </div>
+                
+                <div class="photos-management" style="margin-top: 15px;">
+                    <label>Fotos (Archivos locales):</label>
+                    <div id="photo-inputs-container">
+                        <input type="file" id="photo-file-input" accept="image/*" multiple style="margin-bottom: 5px;">
+                    </div>
+                    <p style="font-size: 0.75rem; color: var(--text-muted);">Puedes seleccionar varias fotos a la vez.</p>
+                </div>
+
+                <button type="submit" class="primary-btn" style="margin-top: 20px; width: 100%;">Registrar Propiedad</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- MODAL AGENDAR CITA -->
+    <div id="modal-schedule" class="overlay" style="display:none">
+        <div class="modal">
+            <span class="close-btn" id="close-schedule">&times;</span>
+            <h2>Agendar Cita</h2>
+            <form id="form-schedule">
+                <input type="hidden" name="cod" id="schedule-cod">
+                <div class="form-grid">
+                    <label>Fecha:</label>
+                    <input type="date" name="fec" id="schedule-date" required>
+                    <label>Horarios Disponibles:</label>
+                    <div id="slots-container" class="slots-grid-small">
+                        <p style="font-size: 0.8rem; color: var(--text-muted);">Selecciona una fecha para ver horarios.</p>
+                    </div>
+                    <input type="hidden" name="hor" id="schedule-time" required>
+                </div>
+                <button type="submit" class="primary-btn" style="margin-top: 20px; width: 100%;">Confirmar Cita</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- MODAL INICIO DE SESIÓN ADMIN -->
+    <div id="modal-admin-login" class="overlay" style="display:none">
+        <div class="modal">
+            <span class="close-btn" id="close-admin-login">&times;</span>
+            <h2>Acceso Administrativo</h2>
+            <p>Por favor, ingresa la clave maestra:</p>
+            <form id="form-admin-login" style="margin-top: 20px;">
+                <input type="password" name="pwd" id="admin-pwd" placeholder="Clave de acceso" required>
+                <div style="display: flex; gap: 10px; margin-top: 10px;">
+                    <button type="submit" class="primary-btn" style="flex: 1;">Entrar</button>
+                    <button type="button" id="btn-cancel-login" class="secondary-btn" style="flex: 1;">Cancelar</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- BOTÓN FLOTANTE ADMINISTRADOR -->
+    <button id="fab-admin" class="fab admin-only" style="display:none" title="Acceso Rápido Administrador">AD</button>
+
+    <!-- MODAL CERRAR NEGOCIO -->
+    <div id="modal-operacion" class="overlay" style="display:none">
+        <div class="modal">
+            <span class="close-btn" id="close-operacion">&times;</span>
+            <h2>Cerrar Negocio</h2>
+            <form id="form-operacion" style="margin-top: 20px;">
+                <input type="hidden" name="cod" id="op-cod">
+                <input type="text" id="op-inmueble-info" readonly style="background:var(--bg-secondary); color:var(--text-muted); padding:10px;">
+                
+                <label style="margin-top:10px;">Cliente:</label>
+                <select name="cli" id="op-cliente-select" required>
+                    <option value="" disabled selected>Selecciona el cliente...</option>
+                </select>
+
+                <label style="margin-top:10px;">Tipo de Operación:</label>
+                <select name="tip" id="op-tipo" required>
+                    <option value="Venta">Venta</option>
+                    <option value="Arriendo">Arriendo</option>
+                </select>
+
+                <label style="margin-top:10px;">Valor Acordado ($):</label>
+                <input type="number" name="val" id="op-valor" required placeholder="Valor de cierre">
+
+                <button type="submit" class="primary-btn" style="margin-top: 20px; width:100%;">Registrar Operación</button>
+            </form>
+        </div>
+    </div>
+
+    <script src="app.js"></script>
+</body>
+</html>

@@ -1,0 +1,269 @@
+Proyecto Final
+Plataforma PropTech para Gestión Inteligente de Inmuebles,
+Clientes y Operaciones
+1. Descripción general
+Se desea desarrollar una aplicación que simule una plataforma inmobiliaria digital
+moderna, en la cual se administren inmuebles, clientes, asesores, solicitudes, visitas,
+contratos y operaciones de arriendo o venta.
+El sistema debe representar el funcionamiento de una inmobiliaria actual tipo
+PropTech, en donde no solo se almacenan propiedades, sino que también se
+gestionan procesos inteligentes como filtrado avanzado, historial de interés de
+clientes, programación de visitas, seguimiento de negociaciones, alertas automáticas,
+recomendaciones de inmuebles y análisis de relaciones entre clientes y propiedades.
+El propósito del proyecto es aplicar de manera justificada diferentes estructuras de
+datos para resolver necesidades reales de organización, búsqueda, priorización,
+recorrido, clasificación y análisis dentro del contexto inmobiliario.
+2. Objetivo del proyecto
+Desarrollar un sistema de gestión inmobiliaria que permita administrar inmuebles,
+clientes, asesores, visitas y operaciones de negocio, utilizando estructuras de datos
+adecuadas para optimizar el acceso, organización y análisis de la información.
+3. Contexto del problema
+Las inmobiliarias modernas ya no trabajan únicamente con listados simples de
+propiedades. Hoy deben gestionar miles de inmuebles con múltiples características,
+relacionarlos con clientes que tienen preferencias específicas, coordinar visitas,
+registrar historiales de negociación, mantener seguimiento de asesores y generar
+recomendaciones o alertas basadas en el comportamiento del mercado.
+
+-- 1 of 9 --
+
+En este contexto, una plataforma inmobiliaria debe responder preguntas como:
+● qué inmuebles coinciden con las preferencias de un cliente
+● cuáles propiedades han recibido más interés
+● qué asesores tienen mayor carga de visitas
+● qué inmuebles están próximos a vencer en contrato
+● qué zonas tienen mayor actividad comercial
+● qué clientes visitaron propiedades similares antes de tomar una decisión
+Por esta razón, el proyecto debe construirse con una visión moderna, donde cada
+estructura de datos tenga una función clara dentro del sistema.
+4. Funcionalidades del sistema
+4.1 Gestión de inmuebles
+El sistema debe permitir registrar inmuebles con información como:
+● código
+● dirección
+● ciudad
+● barrio o zona
+● tipo de inmueble
+● finalidad: venta o arriendo
+● precio
+● área
+● número de habitaciones
+● número de baños
+● estado del inmueble
+● disponibilidad
+● asesor responsable
+Ejemplos de tipos de inmueble:
+● apartamento
+● casa
+● local comercial
+● oficina
+
+-- 2 of 9 --
+
+● lote
+● bodega
+4.2 Gestión de clientes
+El sistema debe permitir registrar clientes interesados en comprar o arrendar
+inmuebles, con información como:
+● identificación
+● nombre
+● correo
+● teléfono
+● tipo de cliente
+● presupuesto
+● zonas de interés
+● tipo de inmueble deseado
+● cantidad mínima de habitaciones
+● estado de búsqueda
+El cliente podrá:
+● consultar inmuebles
+● agendar visitas
+● marcar favoritos
+● registrar intención de compra o arriendo
+● consultar historial de interacciones
+4.3 Gestión de asesores inmobiliarios
+El sistema debe permitir registrar asesores responsables de atender clientes y
+administrar inmuebles.
+Cada asesor tendrá:
+● identificación
+● nombre
+● contacto
+● especialidad o zona asignada
+● inmuebles asignados
+● visitas agendadas
+
+-- 3 of 9 --
+
+● cierres realizados
+4.4 Programación de visitas
+Los clientes podrán solicitar visitas a inmuebles disponibles.
+Cada visita deberá registrar:
+● cliente
+● inmueble
+● fecha
+● hora
+● asesor asignado
+● estado de la visita
+● observaciones posteriores
+Estados posibles:
+● pendiente
+● confirmada
+● realizada
+● cancelada
+● reprogramada
+4.5 Historial de interés y favoritos
+El sistema debe permitir que cada cliente marque inmuebles favoritos y conserve un
+historial de interacción, por ejemplo:
+● inmuebles consultados
+● propiedades visitadas
+● inmuebles descartados
+● inmuebles guardados
+● inmuebles negociados
+Esto permitirá construir un perfil de interés del cliente.
+4.6 Operaciones de negocio
+La plataforma debe permitir registrar operaciones de:
+
+-- 4 of 9 --
+
+● arriendo
+● venta
+● renovación de contrato
+● cancelación de negocio
+Cada operación debe almacenar:
+● identificador
+● inmueble relacionado
+● cliente
+● asesor
+● fecha
+● tipo de operación
+● valor acordado
+● comisión
+● estado del proceso
+4.7 Alertas automáticas
+El sistema debe generar alertas relacionadas con:
+● contratos próximos a vencer
+● inmuebles sin visitas en mucho tiempo
+● propiedades con alta demanda
+● visitas pendientes por confirmar
+● inmuebles reservados por mucho tiempo sin cierre
+● clientes sin seguimiento reciente
+4.8 Recomendación de inmuebles
+La plataforma debe sugerir inmuebles a los clientes según:
+● presupuesto
+● zona de interés
+● tipo de inmueble
+● cantidad de habitaciones
+● historial de consultas
+● propiedades similares visitadas anteriormente
+
+-- 5 of 9 --
+
+4.9 Detección de comportamiento comercial inusual
+El sistema debe incorporar un módulo capaz de detectar comportamientos atípicos
+dentro de la operación de la inmobiliaria, por ejemplo:
+● inmuebles con un número anormalmente alto de visitas sin cierre
+● clientes que agendan múltiples visitas en corto tiempo sin continuidad
+● asesores con sobrecarga excesiva de atención
+● propiedades cuyo precio cambia con demasiada frecuencia
+● concentración de interés en una misma zona en un tiempo reducido
+Cuando se detecte un patrón inusual, el sistema deberá:
+● generar una alerta
+● registrar el evento
+● clasificar el nivel de atención requerido
+● permitir consulta posterior en un módulo de seguimiento
+Este requisito le da un toque mucho más actual al proyecto.
+5. Estructuras de datos que deben aplicarse
+5.1 Listas
+Se utilizarán para:
+● historial de visitas
+● historial de inmuebles consultados
+● favoritos por cliente
+● inmuebles asignados a un asesor
+● contratos registrados
+● operaciones realizadas
+5.2 Pilas
+Se utilizarán para:
+● deshacer cambios recientes en publicaciones de inmuebles
+● reversar modificaciones en el estado de una propiedad
+
+-- 6 of 9 --
+
+● manejar historial de acciones administrativas
+5.3 Colas
+Se utilizarán para:
+● solicitudes de atención de clientes
+● visitas pendientes por procesar
+● seguimiento de tareas administrativas
+● alertas pendientes de revisión
+5.4 Colas de prioridad
+Se utilizarán para:
+● visitas urgentes o VIP
+● alertas de contratos con vencimiento cercano
+● clientes con alta intención de cierre
+● inmuebles con mayor demanda
+5.5 Tablas hash
+Se utilizarán para:
+● buscar clientes por identificación
+● acceder a inmuebles por código
+● localizar asesores rápidamente
+● contar frecuencia de visitas por inmueble o zona
+● agrupar propiedades por ciudad, tipo o estado
+5.6 Árboles
+Se utilizarán para:
+● ordenar inmuebles por precio
+● consultar propiedades por rangos de valor
+● clasificar clientes por presupuesto
+● ordenar asesores por número de cierres o carga de trabajo
+
+-- 7 of 9 --
+
+5.7 Grafos
+Se utilizarán para:
+● representar relaciones entre clientes e inmuebles visitados
+● analizar conexiones entre zonas, clientes y operaciones
+● detectar propiedades similares consultadas por múltiples clientes
+● estudiar patrones de movilidad comercial dentro de la inmobiliaria
+6. Requisitos funcionales
+El sistema debe permitir:
+1. Registrar, modificar, eliminar y consultar inmuebles.
+2. Registrar, modificar, eliminar y consultar clientes.
+3. Registrar, modificar y consultar asesores.
+4. Programar, reprogramar y cancelar visitas.
+5. Registrar favoritos e historial de interacción de cada cliente.
+6. Registrar operaciones de arriendo, venta y renovación.
+7. Generar alertas automáticas.
+8. Recomendar inmuebles según preferencias del cliente.
+9. Detectar comportamientos comerciales inusuales.
+10. Consultar reportes por zona, precio, visitas y cierres.
+11. Ordenar inmuebles por criterios como precio, área o demanda.
+12. Consultar relaciones entre clientes e inmuebles a través de análisis estructural.
+7. Requisitos no funcionales
+● El sistema debe estar organizado con clases bien definidas.
+● Cada estructura de datos debe tener justificación técnica.
+● Las búsquedas principales deben ser eficientes.
+● Debe haber validaciones de disponibilidad, presupuesto y consistencia.
+● El sistema debe soportar manejo de errores.
+● Puede implementarse en consola o con interfaz gráfica.
+● Debe incluir documentación del diseño y del uso de estructuras.
+
+-- 8 of 9 --
+
+8. Requisitos adicionales
+● recomendación de inmuebles similares a uno consultado
+● ranking de zonas con mayor actividad
+● ranking de asesores por efectividad
+● detección de clientes con alta probabilidad de cierre
+● consulta de inmuebles por múltiples filtros combinados
+● análisis de relaciones entre inmuebles visitados por clientes similares
+● simulación de crecimiento de demanda por sector
+9. Entregables esperados
+El proyecto debe incluir:
+● código fuente completo
+● diagrama de clases
+● explicación del problema
+● descripción de las estructuras de datos utilizadas
+● justificación técnica de cada estructura
+● ejemplos de ejecución
+● informe final
+
+-- 9 of 9 --
+
