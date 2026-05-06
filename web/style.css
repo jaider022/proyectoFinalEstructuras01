@@ -726,7 +726,7 @@ select {
 }
 
 .primary-btn-orange {
-    background: #ff5722;
+    background: var(--accent-color);
     color: white;
     border: none;
     padding: 0.75rem 1.5rem;
@@ -734,11 +734,14 @@ select {
     font-size: 1rem;
     font-weight: 600;
     cursor: pointer;
-    transition: background 0.3s;
+    transition: all 0.3s;
+    box-shadow: 0 4px 6px -1px rgba(99, 102, 241, 0.4);
 }
 
 .primary-btn-orange:hover {
-    background: #e64a19;
+    filter: brightness(1.1);
+    transform: translateY(-2px);
+    box-shadow: 0 6px 12px -2px rgba(99, 102, 241, 0.5);
 }
 
 .landing-hero {
@@ -765,7 +768,7 @@ select {
 }
 
 .hero-box h2 span {
-    color: #ff5722;
+    color: var(--accent-color);
 }
 
 .hero-search-form {
@@ -786,7 +789,7 @@ select {
 
 .hero-search-form input:focus,
 .hero-search-form select:focus {
-    border-color: #ff5722;
+    border-color: var(--accent-color);
 }
 
 .hero-search-form .primary-btn-orange {
@@ -811,8 +814,9 @@ select {
 }
 
 .quick-link-card:hover {
-    border-color: #ff5722;
-    box-shadow: 0 4px 10px rgba(0,0,0,0.05);
+    border-color: var(--accent-color);
+    box-shadow: 0 10px 15px -3px rgba(99, 102, 241, 0.1);
+    transform: translateY(-2px);
 }
 
 .quick-link-card .icon {
@@ -838,7 +842,7 @@ select {
 
 .quick-link-card .arrow {
     font-size: 1.5rem;
-    color: #ff5722;
+    color: var(--accent-color);
     font-weight: bold;
 }
 
