@@ -1,6 +1,4 @@
-# 📊 Diagrama de Clases - Sistema PropTech
-
-Este diagrama representa la arquitectura del sistema, mostrando la relación entre los modelos, el controlador y las estructuras de datos personalizadas.
+# Diagrama de Clases - PropTech System
 
 ```mermaid
 classDiagram
@@ -8,32 +6,44 @@ classDiagram
         -CustomHashTable tablaClientes
         -CustomHashTable tablaInmueblesRapida
         -CustomBST arbolInmueblesPrecio
-        -CustomHashTable tablaAsesores
+        -CustomGraph grafoRelaciones
         -CustomStack historialAdministrativo
         -CustomPriorityQueue colaVisitasPrioritarias
-        -CustomGraph grafoRelaciones
-        +registrarCliente(Cliente)
         +registrarInmueble(Inmueble)
-        +agendarVisita(idCliente, codInmueble, idAsesor, fecha, hora, prioridad)
-        +detectarComportamientoInusual()
-        +mostrarRecomendaciones(idCliente)
+        +registrarCliente(Cliente)
+        +agendarVisita(Cliente, Inmueble)
+        +obtenerRecomendacionesHibridas(String)
+        +simularCrecimientoDemanda(String, int)
     }
 
-    class Cliente {
-        -String identificacion
-        -String nombre
-        -CustomList historialVisitas
+    class PropTechServer {
+        -HttpServer server
+        -PropTechSystem sistema
+        +start()
     }
 
     class Inmueble {
         -String codigo
         -double precio
-        -String direccion
+        -String zona
+        -String disponibilidad
+        -Asesor asesorResponsable
+        +cambiarDisponibilidad(String)
+    }
+
+    class Cliente {
+        -String identificacion
+        -String nombre
+        -double presupuesto
+        -CustomList favoritos
+        -CustomList historialVisitas
     }
 
     class Asesor {
         -String identificacion
+        -String nombre
         -CustomQueue visitasPendientes
+        +registrarCierre()
     }
 
     class Visita {
@@ -41,24 +51,29 @@ classDiagram
         -Inmueble inmueble
         -Asesor asesor
         -String fecha
+        -String hora
     }
 
-    class CustomGraph {
-        -CustomHashTable adjacencyList
-        +addEdge(source, dest)
-        +getRecommendations(node)
+    class Operacion {
+        -String idOperacion
+        -String tipo
+        -double monto
     }
 
-    PropTechSystem --> Cliente
-    PropTechSystem --> Inmueble
-    PropTechSystem --> Asesor
-    PropTechSystem --> CustomGraph
-    PropTechSystem --> CustomPriorityQueue
-    
-    Visita --> Cliente
-    Visita --> Inmueble
-    Visita --> Asesor
-    
-    Asesor --> CustomQueue
-    Cliente --> CustomList
+    PropTechServer --> PropTechSystem : utiliza
+    PropTechSystem "1" *-- "many" Inmueble : gestiona
+    PropTechSystem "1" *-- "many" Cliente : gestiona
+    PropTechSystem "1" *-- "many" Asesor : gestiona
+    Inmueble o-- Asesor : asignado a
+    Visita --> Cliente : involucra
+    Visita --> Inmueble : sobre
+    Visita --> Asesor : realizada por
+    Operacion --> Inmueble : afecta
+    Operacion --> Cliente : realizada por
 ```
+
+## Relación con Estructuras de Datos
+- **Inmueble/Cliente/Asesor:** Almacenados en `CustomHashTable` para búsquedas O(1).
+- **Catálogo de Precios:** Gestionado por `CustomBST` para búsquedas por rango.
+- **Flujo de Visitas:** `CustomQueue` y `CustomPriorityQueue` para atención y prioridad VIP.
+- **Relaciones de Mercado:** `CustomGraph` para analizar conexiones entre usuarios y propiedades.

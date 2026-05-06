@@ -66,7 +66,31 @@ public class CustomBST<K extends Comparable<K>, V> {
         }
     }
 
-    // Nuevo: Retornar lista ordenada
+    // --- BÚSQUEDA POR RANGO (Req 5.6) ---
+    /** Retorna todos los valores cuya clave está entre minKey y maxKey (inclusive). */
+    public CustomList<V> rangeQuery(K minKey, K maxKey) {
+        CustomList<V> result = new CustomList<>();
+        rangeRec(root, minKey, maxKey, result);
+        return result;
+    }
+
+    private void rangeRec(TreeNode<K, V> node, K minKey, K maxKey, CustomList<V> result) {
+        if (node == null) return;
+        // Si la clave actual es mayor que el mínimo, el subárbol izquierdo puede tener candidatos
+        if (minKey.compareTo(node.getKey()) < 0) {
+            rangeRec(node.getLeft(), minKey, maxKey, result);
+        }
+        // Añadir nodo actual si está dentro del rango
+        if (minKey.compareTo(node.getKey()) <= 0 && maxKey.compareTo(node.getKey()) >= 0) {
+            result.add(node.getValue());
+        }
+        // Si la clave actual es menor que el máximo, el subárbol derecho puede tener candidatos
+        if (maxKey.compareTo(node.getKey()) > 0) {
+            rangeRec(node.getRight(), minKey, maxKey, result);
+        }
+    }
+
+    // Retornar lista ordenada
     public CustomList<V> toList() {
         CustomList<V> list = new CustomList<>();
         toListRec(root, list);

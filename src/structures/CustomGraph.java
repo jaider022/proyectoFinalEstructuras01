@@ -26,7 +26,7 @@ public class CustomGraph<T> {
         addVertex(destination);
 
         adjacencyList.get(source).add(destination);
-        
+
         if (bidirectional) {
             adjacencyList.get(destination).add(source);
         }
@@ -40,25 +40,27 @@ public class CustomGraph<T> {
     /**
      * Motor de recomendaciones simple:
      * Si el vértice 'A' (Cliente) visitó 'B' (Inmueble),
-     * busca qué otros inmuebles 'C' han sido visitados por otros clientes 
+     * busca qué otros inmuebles 'C' han sido visitados por otros clientes
      * que también visitaron 'B'.
      */
     public CustomList<T> getRecommendations(T startNode) {
         CustomList<T> recommendations = new CustomList<>();
         CustomList<T> visitedProperties = adjacencyList.get(startNode);
-        
-        if (visitedProperties == null) return recommendations;
+
+        if (visitedProperties == null)
+            return recommendations;
 
         // Para cada inmueble que visitó el cliente inicial
         for (int i = 0; i < visitedProperties.getSize(); i++) {
             T property = visitedProperties.get(i);
-            
+
             // Si el grafo es bidireccional, los vecinos de 'property' son otros clientes
             CustomList<T> otherClients = adjacencyList.get(property);
             if (otherClients != null) {
                 for (int j = 0; j < otherClients.getSize(); j++) {
                     T otherClient = otherClients.get(j);
-                    if (otherClient.equals(startNode)) continue;
+                    if (otherClient.equals(startNode))
+                        continue;
 
                     // Para esos otros clientes, ver qué otros inmuebles visitaron
                     CustomList<T> otherProperties = adjacencyList.get(otherClient);
@@ -79,8 +81,74 @@ public class CustomGraph<T> {
 
     private boolean contains(CustomList<T> list, T item) {
         for (int i = 0; i < list.getSize(); i++) {
-            if (list.get(i).equals(item)) return true;
+            if (list.get(i).equals(item))
+                return true;
         }
         return false;
+    }
+
+    /**
+     * REQ 5.7: Retorna el grado (número de conexiones) de un vértice.
+     * Permite medir qué tan "popular" es un nodo (cliente o inmueble).
+     */
+    public int getDegree(T vertex) {
+        CustomList<T> neighbors = adjacencyList.get(vertex);
+        return neighbors == null ? 0 : neighbors.getSize();
+    }
+
+    /**
+     * REQ 5.7: Detecta propiedades con más de minConnections vecinos
+     * (visitadas por múltiples clientes). Son los "hotspots" del mercado.
+     */
+    public CustomList<T> getHotspots(int minConnections, CustomList<T> onlyVertices) {
+        CustomList<T> hotspots = new CustomList<>();
+        for (int i = 0; i < onlyVertices.getSize(); i++) {
+            T v = onlyVertices.get(i);
+            if (getDegree(v) >= minConnections) {
+                hotspots.add(v);
+            }
+        }
+        return hotspots;
+    }
+
+    /**
+     * REQ 5.7: Analiza qué clientes comparten interés en la misma propiedad.
+     * Retorna lista de clientes conectados al mismo vértice destino.
+     */
+    public CustomList<T> getCommonClients(T property) {
+        CustomList<T> clientes = new CustomList<>();
+        CustomList<T> vecinos = adjacencyList.get(property);
+        if (vecinos == null) return clientes;
+        for (int i = 0; i < vecinos.getSize(); i++) {
+            T v = vecinos.get(i);
+            if (!contains(clientes, v)) clientes.add(v);
+        }
+        return clientes;
+    }
+
+    /**
+     * REQ 5.7: BFS desde un nodo — estudia el alcance de conexiones (movilidad comercial).
+     * Devuelve todos los nodos alcanzables desde el vértice de inicio.
+     */
+    public CustomList<T> bfsTraversal(T startNode) {
+        CustomList<T> visited = new CustomList<>();
+        CustomQueue<T> cola = new CustomQueue<>();
+        cola.enqueue(startNode);
+        visited.add(startNode);
+
+        while (!cola.isEmpty()) {
+            T current = cola.dequeue();
+            CustomList<T> neighbors = adjacencyList.get(current);
+            if (neighbors != null) {
+                for (int i = 0; i < neighbors.getSize(); i++) {
+                    T neighbor = neighbors.get(i);
+                    if (!contains(visited, neighbor)) {
+                        visited.add(neighbor);
+                        cola.enqueue(neighbor);
+                    }
+                }
+            }
+        }
+        return visited;
     }
 }

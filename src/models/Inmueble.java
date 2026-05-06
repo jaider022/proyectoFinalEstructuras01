@@ -14,12 +14,16 @@ public class Inmueble {
     private double areaTerreno;
     private int habitaciones;
     private int banos;
-    private String estado;    // Disponible, Reservado, Arrendado, Vendido
+    private String estadoFisico; // Nuevo, Usado, En Remodelación, Sobre Planos
+    private String disponibilidad; // Disponible, Reservado, Arrendado, Vendido
+    private String fechaUltimaVisita;
+    private String fechaReserva;
+    private int cambiosPrecioCount;
     private Asesor asesorResponsable;
     private CustomList<String> fotos;
 
     public Inmueble(String codigo, String direccion, String ciudad, String zona, String tipo, String finalidad,
-                    double precio, double area, double areaTerreno, int habitaciones, int banos, String estado) {
+                    double precio, double area, double areaTerreno, int habitaciones, int banos, String estadoFisico, String disponibilidad) {
         this.codigo = codigo;
         this.direccion = direccion;
         this.ciudad = ciudad;
@@ -31,7 +35,8 @@ public class Inmueble {
         this.areaTerreno = areaTerreno;
         this.habitaciones = habitaciones;
         this.banos = banos;
-        this.estado = estado;
+        this.estadoFisico = estadoFisico;
+        this.disponibilidad = disponibilidad;
         this.asesorResponsable = null;
         this.fotos = new CustomList<>();
     }
@@ -52,13 +57,30 @@ public class Inmueble {
     public void setZona(String zona) { this.zona = zona; }
 
     public String getTipo() { return tipo; }
-    public void setTipo(String tipo) { this.tipo = tipo; }
+    public void setTipo(String tipo) { 
+        if (validarTipo(tipo)) {
+            this.tipo = tipo; 
+        } else {
+            this.tipo = "Otro"; // Fallback seguro
+        }
+    }
 
     public String getFinalidad() { return finalidad; }
-    public void setFinalidad(String finalidad) { this.finalidad = finalidad; }
+    public void setFinalidad(String finalidad) { 
+        if (validarFinalidad(finalidad)) {
+            this.finalidad = finalidad; 
+        }
+    }
 
     public double getPrecio() { return precio; }
-    public void setPrecio(double precio) { this.precio = precio; }
+    public void setPrecio(double precio) { 
+        if (this.precio != 0 && this.precio != precio) {
+            this.cambiosPrecioCount++;
+        }
+        this.precio = precio; 
+    }
+
+    public int getCambiosPrecioCount() { return cambiosPrecioCount; }
 
     public double getArea() { return area; }
     public void setArea(double area) { this.area = area; }
@@ -72,23 +94,60 @@ public class Inmueble {
     public int getBanos() { return banos; }
     public void setBanos(int banos) { this.banos = banos; }
 
-    public String getEstado() { return estado; }
-    public void setEstado(String estado) {
-        if (validarEstado(estado)) {
-            this.estado = estado;
+    public String getEstadoFisico() { return estadoFisico; }
+    public void setEstadoFisico(String estadoFisico) { 
+        if (validarEstadoFisico(estadoFisico)) {
+            this.estadoFisico = estadoFisico; 
+        } else {
+            this.estadoFisico = "Usado"; // Fallback
         }
     }
 
-    public void cambiarEstado(String nuevoEstado) {
-        setEstado(nuevoEstado);
+    public String getDisponibilidad() { return disponibilidad; }
+    public void setDisponibilidad(String disponibilidad) {
+        if (validarDisponibilidad(disponibilidad)) {
+            this.disponibilidad = disponibilidad;
+        }
     }
 
-    private boolean validarEstado(String e) {
-        String s = e.toLowerCase();
+    public void cambiarDisponibilidad(String nuevaDisponibilidad) {
+        setDisponibilidad(nuevaDisponibilidad);
+    }
+
+    private boolean validarDisponibilidad(String d) {
+        if (d == null) return false;
+        String s = d.toLowerCase();
         return s.equals("disponible") || s.equals("reservado") || s.equals("arrendado") || s.equals("vendido");
     }
 
+    private boolean validarTipo(String t) {
+        if (t == null) return false;
+        String s = t.toLowerCase();
+        return s.equals("apartamento") || s.equals("casa") || s.equals("local comercial") || 
+               s.equals("oficina") || s.equals("lote") || s.equals("bodega") || s.equals("apto");
+    }
+
+    private boolean validarFinalidad(String f) {
+        if (f == null) return false;
+        String s = f.toLowerCase();
+        return s.equals("venta") || s.equals("arriendo");
+    }
+
+    private boolean validarEstadoFisico(String e) {
+        if (e == null) return false;
+        String s = e.toLowerCase();
+        return s.equals("nuevo") || s.equals("usado") || s.equals("en remodelación") || 
+               s.equals("sobre planos") || s.equals("remodelado");
+    }
+
     public Asesor getAsesorResponsable() { return asesorResponsable; }
+    
+    public String getFechaUltimaVisita() { return fechaUltimaVisita; }
+    public void setFechaUltimaVisita(String f) { this.fechaUltimaVisita = f; }
+
+    public String getFechaReserva() { return fechaReserva; }
+    public void setFechaReserva(String f) { this.fechaReserva = f; }
+
     public void setAsesorResponsable(Asesor asesor) {
         // Desvincular del anterior
         if (this.asesorResponsable != null) {

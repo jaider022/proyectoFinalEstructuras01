@@ -23,7 +23,9 @@ public class Visita {
     public Inmueble getInmueble() { return inmueble; }
     public Asesor getAsesorAsignado() { return asesorAsignado; }
     public String getFecha() { return fecha; }
+    public void setFecha(String fecha) { this.fecha = fecha; }
     public String getHora() { return hora; }
+    public void setHora(String hora) { this.hora = hora; }
     public String getEstado() { return estado; }
     public String getObservaciones() { return observaciones; }
 
@@ -38,8 +40,10 @@ public class Visita {
     }
 
     private boolean validarEstado(String e) {
+        if (e == null) return false;
         String s = e.toLowerCase();
-        return s.equals("pendiente") || s.equals("confirmada") || s.equals("realizada") || s.equals("cancelada");
+        return s.equals("pendiente") || s.equals("confirmada") || s.equals("realizada") || 
+               s.equals("cancelada") || s.equals("reprogramada");
     }
 
     public void setObservaciones(String observaciones) { this.observaciones = observaciones; }

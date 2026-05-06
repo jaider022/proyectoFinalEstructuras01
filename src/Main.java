@@ -11,16 +11,16 @@ public class Main {
         Asesor maria = new Asesor("A-001", "Maria Lopez", "300123", "Norte");
         sistema.registrarAsesor(maria);
 
-        Inmueble i1 = new Inmueble("INM-A", "Calle 100", "Bogotá", "Norte", "Apto", "Venta", 300000.0, 80, 2, 2, "D");
-        Inmueble i2 = new Inmueble("INM-B", "Cra 7", "Bogotá", "Norte", "Casa", "Arriendo", 5000.0, 150, 4, 3, "D");
-        Inmueble i3 = new Inmueble("INM-C", "Calle 80", "Bogotá", "Occidente", "Apto", "Venta", 250000.0, 70, 2, 1, "D");
+        Inmueble i1 = new Inmueble("INM-A", "Calle 100", "Bogotá", "Norte", "Apto", "Venta", 300000.0, 80, 0, 2, 2, "Usado", "Disponible");
+        Inmueble i2 = new Inmueble("INM-B", "Cra 7", "Bogotá", "Norte", "Casa", "Arriendo", 5000.0, 150, 0, 4, 3, "Usado", "Disponible");
+        Inmueble i3 = new Inmueble("INM-C", "Calle 80", "Bogotá", "Occidente", "Apto", "Venta", 250000.0, 70, 0, 2, 1, "Nuevo", "Disponible");
         
         sistema.registrarInmueble(i1);
         sistema.registrarInmueble(i2);
         sistema.registrarInmueble(i3);
 
-        Cliente c1 = new Cliente("C-1", "Carlos", "c@mail.com", "123", "Comprador", 400000.0, "Norte", "Apto");
-        Cliente c2 = new Cliente("C-2", "Ana", "a@mail.com", "456", "Inversionista", 500000.0, "Norte", "Todo");
+        Cliente c1 = new Cliente("C-1", "Carlos", "c@mail.com", "123", "Comprador", 400000.0, "Norte", "Apto", 2, "Activo");
+        Cliente c2 = new Cliente("C-2", "Ana", "a@mail.com", "456", "Inversionista", 500000.0, "Norte", "Todo", 0, "Activo");
         
         sistema.registrarCliente(c1);
         sistema.registrarCliente(c2);

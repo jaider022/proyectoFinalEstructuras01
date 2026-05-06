@@ -85,4 +85,15 @@ public class CustomList<T> {
     
     public int getSize() { return size; }
     public boolean isEmpty() { return size == 0; }
+
+    public void set(int index, T data) {
+        if (index < 0 || index >= size) {
+            throw new IndexOutOfBoundsException("Índice fuera de los límites.");
+        }
+        Node<T> current = head;
+        for (int i = 0; i < index; i++) {
+            current = current.getNext();
+        }
+        current.setData(data);
+    }
 }

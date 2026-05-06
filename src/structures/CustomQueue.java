@@ -59,4 +59,14 @@ public class CustomQueue<T> {
         }
         return false;
     }
+
+    public CustomList<T> toList() {
+        CustomList<T> list = new CustomList<>();
+        Node<T> current = front;
+        while (current != null) {
+            list.add(current.getData());
+            current = current.getNext();
+        }
+        return list;
+    }
 }

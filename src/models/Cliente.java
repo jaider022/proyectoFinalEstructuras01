@@ -11,13 +11,21 @@ public class Cliente {
     private double presupuesto;
     private String zonasDeInteres;
     private String tipoInmuebleDeseado;
+    private int minHabitaciones;
+    private String estadoBusqueda; // Activo, Inactivo, Exitoso
+    private String fechaUltimoSeguimiento;
     
     // Aquí conectamos la estructura que programamos a mano
     private CustomList<Inmueble> favoritos; 
+    private CustomList<Inmueble> intenciones;
+    private CustomList<Inmueble> consultados;
+    private CustomList<Inmueble> descartados;
+    private CustomList<Inmueble> negociados;
     private CustomList<Visita> historialVisitas;
 
     public Cliente(String identificacion, String nombre, String correo, String telefono, 
-                   String tipoCliente, double presupuesto, String zonasDeInteres, String tipoInmuebleDeseado) {
+                   String tipoCliente, double presupuesto, String zonasDeInteres, String tipoInmuebleDeseado,
+                   int minHabitaciones, String estadoBusqueda) {
         this.identificacion = identificacion;
         this.nombre = nombre;
         this.correo = correo;
@@ -26,11 +34,21 @@ public class Cliente {
         this.presupuesto = presupuesto;
         this.zonasDeInteres = zonasDeInteres;
         this.tipoInmuebleDeseado = tipoInmuebleDeseado;
+        this.minHabitaciones = minHabitaciones;
+        setEstadoBusqueda(estadoBusqueda);
         this.favoritos = new CustomList<>();
+        this.intenciones = new CustomList<>();
+        this.consultados = new CustomList<>();
+        this.descartados = new CustomList<>();
+        this.negociados = new CustomList<>();
         this.historialVisitas = new CustomList<>();
     }
 
     public CustomList<Inmueble> getFavoritos() { return favoritos; }
+    public CustomList<Inmueble> getIntenciones() { return intenciones; }
+    public CustomList<Inmueble> getConsultados() { return consultados; }
+    public CustomList<Inmueble> getDescartados() { return descartados; }
+    public CustomList<Inmueble> getNegociados() { return negociados; }
     public CustomList<Visita> getHistorialVisitas() { return historialVisitas; }
 
     // Getters y Setters
@@ -58,6 +76,27 @@ public class Cliente {
     public String getTipoInmuebleDeseado() { return tipoInmuebleDeseado; }
     public void setTipoInmuebleDeseado(String tipoInmuebleDeseado) { this.tipoInmuebleDeseado = tipoInmuebleDeseado; }
 
+    public int getMinHabitaciones() { return minHabitaciones; }
+    public void setMinHabitaciones(int minHabitaciones) { this.minHabitaciones = minHabitaciones; }
+
+    public String getEstadoBusqueda() { return estadoBusqueda; }
+    public void setEstadoBusqueda(String estadoBusqueda) { 
+        if (validarEstadoBusqueda(estadoBusqueda)) {
+            this.estadoBusqueda = estadoBusqueda;
+        } else {
+            this.estadoBusqueda = "Activo"; // Fallback
+        }
+    }
+
+    public String getFechaUltimoSeguimiento() { return fechaUltimoSeguimiento; }
+    public void setFechaUltimoSeguimiento(String f) { this.fechaUltimoSeguimiento = f; }
+
+    private boolean validarEstadoBusqueda(String e) {
+        if (e == null) return false;
+        String s = e.toLowerCase();
+        return s.equals("activo") || s.equals("inactivo") || s.equals("exitoso");
+    }
+
     public void agregarFavorito(Inmueble inmueble) {
         if (favoritos.indexOf(inmueble) == -1) {
             favoritos.add(inmueble);
@@ -68,8 +107,26 @@ public class Cliente {
         favoritos.remove(inmueble);
     }
 
+    public void registrarIntencion(Inmueble inmueble) {
+        if (intenciones.indexOf(inmueble) == -1) {
+            intenciones.add(inmueble);
+        }
+    }
+
+    public void agregarConsultado(Inmueble i) {
+        if (consultados.indexOf(i) == -1) consultados.add(i);
+    }
+
+    public void agregarDescartado(Inmueble i) {
+        if (descartados.indexOf(i) == -1) descartados.add(i);
+    }
+
+    public void agregarNegociado(Inmueble i) {
+        if (negociados.indexOf(i) == -1) negociados.add(i);
+    }
+
     @Override
     public String toString() {
-        return "Cliente: " + nombre + " (" + identificacion + ") - Presupuesto: $" + presupuesto;
+        return "Cliente: " + nombre + " (" + identificacion + ") - Presupuesto: $" + presupuesto + " - Búsqueda: " + estadoBusqueda;
     }
 }

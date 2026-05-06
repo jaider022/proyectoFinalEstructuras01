@@ -9,14 +9,14 @@ public class ModelBehaviorTest {
         PropTechSystem sistema = new PropTechSystem();
 
         // 1. Probar Estados
-        Inmueble i1 = new Inmueble("TEST-1", "Dir 1", "Ciu 1", "Zon 1", "Casa", "Venta", 100000.0, 50, 1, 1, "Disponible");
-        System.out.println("Estado inicial: " + i1.getEstado());
+        Inmueble i1 = new Inmueble("TEST-1", "Dir 1", "Ciu 1", "Zon 1", "Casa", "Venta", 100000.0, 50, 0, 1, 1, "Usado", "Disponible");
+        System.out.println("Disponibilidad inicial: " + i1.getDisponibilidad());
         
-        i1.cambiarEstado("Reservado");
-        System.out.println("Estado después de cambiarEstado('Reservado'): " + i1.getEstado());
+        i1.cambiarDisponibilidad("Reservado");
+        System.out.println("Disponibilidad después de cambiarDisponibilidad('Reservado'): " + i1.getDisponibilidad());
         
-        i1.setEstado("Inexistente");
-        System.out.println("Estado después de setEstado('Inexistente') (debe ignorar): " + i1.getEstado());
+        i1.setDisponibilidad("Inexistente");
+        System.out.println("Disponibilidad después de setDisponibilidad('Inexistente') (debe ignorar): " + i1.getDisponibilidad());
         
         // 2. Probar Asignación Bi-direccional
         Asesor a1 = new Asesor("A1", "Asesor 1", "123", "Norte");
@@ -34,7 +34,7 @@ public class ModelBehaviorTest {
         System.out.println("Inmuebles de A2 (debe ser 1): " + a2.getInmueblesAsignados().getSize());
 
         // 3. Probar Favoritos
-        Cliente c1 = new Cliente("C1", "Cliente 1", "c1@mail.com", "123", "Comprador", 200000.0, "Norte", "Casa");
+        Cliente c1 = new Cliente("C1", "Cliente 1", "c1@mail.com", "123", "Comprador", 200000.0, "Norte", "Casa", 1, "Activo");
         System.out.println("\nAgregando favorito...");
         c1.agregarFavorito(i1);
         System.out.println("Favoritos de C1: " + c1.getFavoritos().getSize());

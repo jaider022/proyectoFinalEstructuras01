@@ -103,4 +103,16 @@ public class CustomHashTable<K, V> {
         }
         return list;
     }
+
+    public CustomList<K> keys() {
+        CustomList<K> list = new CustomList<>();
+        for (int i = 0; i < capacity; i++) {
+            HashNode<K, V> current = buckets[i];
+            while (current != null) {
+                list.add(current.getKey());
+                current = current.getNext();
+            }
+        }
+        return list;
+    }
 }

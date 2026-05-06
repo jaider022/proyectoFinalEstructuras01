@@ -110,4 +110,12 @@ public class CustomPriorityQueue<T> {
         }
         return false;
     }
+
+    public CustomList<T> toList() {
+        CustomList<T> list = new CustomList<>();
+        for (int i = 0; i < size; i++) {
+            list.add(heap[i].data);
+        }
+        return list;
+    }
 }

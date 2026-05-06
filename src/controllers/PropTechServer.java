@@ -5,6 +5,7 @@ import com.sun.net.httpserver.HttpHandler;
 import com.sun.net.httpserver.HttpExchange;
 import structures.JsonUtil;
 import structures.CustomList;
+import structures.CustomHashTable;
 import models.*;
 import java.io.IOException;
 import java.io.OutputStream;
@@ -29,6 +30,7 @@ public class PropTechServer {
 
         // API endpoints
         server.createContext("/api/inmuebles", new InmueblesHandler());
+        server.createContext("/api/inmuebles/filtrar", new InmueblesFiltrarHandler());
         server.createContext("/api/inmuebles/add", new InmuebleAddHandler());
         server.createContext("/api/inmuebles/delete", new InmuebleDeleteHandler());
         server.createContext("/api/clientes", new ClientesHandler());
@@ -36,8 +38,22 @@ public class PropTechServer {
         server.createContext("/api/visitas/agendar", new VisitaAgendarHandler());
         server.createContext("/api/visitas/slots", new VisitaSlotsHandler());
         server.createContext("/api/login", new LoginHandler());
+        server.createContext("/api/login/asesor", new LoginAsesorHandler());
         server.createContext("/api/operaciones/add", new OperacionAddHandler());
         server.createContext("/api/analitica", new AnaliticaHandler());
+        server.createContext("/api/asesores", new AsesoresHandler());
+        server.createContext("/api/asesores/add", new AsesorAddHandler());
+        server.createContext("/api/alertas", new AlertasHandler());
+        server.createContext("/api/auditoria", new AuditoriaHandler());
+        server.createContext("/api/recomendaciones", new RecomendacionesHandler());
+        server.createContext("/api/undo/snapshot", new UndoSnapshotHandler());
+        server.createContext("/api/undo/admin", new UndoAdminHandler());
+        server.createContext("/api/visitas/reprogramar", new VisitaReprogramarHandler());
+        server.createContext("/api/visitas/cancelar", new VisitaCancelarHandler());
+        server.createContext("/api/operaciones/renovar", new OperacionRenovarHandler());
+        server.createContext("/api/reportes", new ReportesHandler());
+        server.createContext("/api/simulacion/demanda", new SimulacionDemandaHandler());
+        server.createContext("/api/rankings", new RankingsHandler());
 
         server.setExecutor(null);
         System.out.println("Servidor PropTech iniciado en http://localhost:" + port);
@@ -150,8 +166,11 @@ public class PropTechServer {
                 String contentType = "text/html";
                 if (path.endsWith(".css")) contentType = "text/css";
                 else if (path.endsWith(".js")) contentType = "application/javascript";
+                else if (path.endsWith(".jpg") || path.endsWith(".jpeg")) contentType = "image/jpeg";
+                else if (path.endsWith(".png")) contentType = "image/png";
+                else if (path.endsWith(".webp")) contentType = "image/webp";
                 
-                exchange.getResponseHeaders().set("Content-Type", contentType + "; charset=UTF-8");
+                exchange.getResponseHeaders().set("Content-Type", contentType);
                 exchange.sendResponseHeaders(200, content.length);
                 OutputStream os = exchange.getResponseBody();
                 os.write(content);
@@ -172,6 +191,68 @@ public class PropTechServer {
         }
     }
 
+    class InmueblesFiltrarHandler implements HttpHandler {
+        @Override
+        public void handle(HttpExchange exchange) throws IOException {
+            java.util.Map<String, String> p = getQueryParams(exchange.getRequestURI().getQuery());
+            String tipo = p.get("tip");
+            String finalidad = p.get("fin");
+            int hab = p.get("hab") != null && !p.get("hab").isEmpty() ? Integer.parseInt(p.get("hab")) : 0;
+            int ban = p.get("ban") != null && !p.get("ban").isEmpty() ? Integer.parseInt(p.get("ban")) : 0;
+            double preMax = p.get("preMax") != null && !p.get("preMax").isEmpty() ? Double.parseDouble(p.get("preMax")) : 0;
+
+            CustomList<Inmueble> filtrados = sistema.filtrarInmueblesAvanzado(tipo, finalidad, hab, ban, preMax);
+            String response = JsonUtil.listToJson(filtrados, JsonUtil::inmuebleToJson);
+            
+            exchange.getResponseHeaders().set("Content-Type", "application/json; charset=UTF-8");
+            sendResponse(exchange, response, 200);
+        }
+    }
+
+    class AsesoresHandler implements HttpHandler {
+        @Override
+        public void handle(HttpExchange exchange) throws IOException {
+            CustomList<Asesor> lista = sistema.obtenerAsesoresLista();
+            String response = JsonUtil.listToJson(lista, JsonUtil::asesorToJson);
+            exchange.getResponseHeaders().set("Content-Type", "application/json; charset=UTF-8");
+            sendResponse(exchange, response, 200);
+        }
+    }
+
+    class AsesorAddHandler implements HttpHandler {
+        @Override
+        public void handle(HttpExchange exchange) throws IOException {
+            java.util.Map<String, String> p;
+            
+            if ("POST".equalsIgnoreCase(exchange.getRequestMethod())) {
+                String body = readRequestBody(exchange);
+                p = parseJson(body);
+            } else {
+                p = getQueryParams(exchange.getRequestURI().getQuery());
+            }
+
+            try {
+                String id = p.get("id");
+                String nombre = p.get("nombre");
+                String contacto = p.get("contacto");
+                String zona = p.get("zona");
+
+                if (id == null || id.isEmpty() || nombre == null || nombre.isEmpty()) {
+                    sendResponse(exchange, "{\"status\":\"error\", \"message\":\"ID y Nombre son obligatorios\"}", 400);
+                    return;
+                }
+
+                Asesor nuevoAsesor = new Asesor(id, nombre, contacto, zona);
+                sistema.registrarAsesor(nuevoAsesor);
+                
+                sendResponse(exchange, "{\"status\":\"ok\"}", 200);
+            } catch (Exception e) {
+                e.printStackTrace();
+                sendResponse(exchange, "{\"status\":\"error\", \"message\":\"" + e.getMessage() + "\"}", 400);
+            }
+        }
+    }
+
     class InmuebleAddHandler implements HttpHandler {
         @Override
         public void handle(HttpExchange exchange) throws IOException {
@@ -185,9 +266,10 @@ public class PropTechServer {
             }
 
             try {
+                String estFis = p.get("estFis") != null ? p.get("estFis") : "Usado";
                 Inmueble n = new Inmueble(p.get("cod"), p.get("dir"), p.get("ciu"), p.get("zon"), p.get("tip"), p.get("fin"),
                     Double.parseDouble(p.get("pre")), Double.parseDouble(p.get("are")), Double.parseDouble(p.get("areT")),
-                    Integer.parseInt(p.get("hab")), Integer.parseInt(p.get("ban")), p.get("est"));
+                    Integer.parseInt(p.get("hab")), Integer.parseInt(p.get("ban")), estFis, p.get("est"));
                 
                 String ftsStr = p.get("fts");
                 if (ftsStr != null && !ftsStr.isEmpty()) {
@@ -230,8 +312,11 @@ public class PropTechServer {
         public void handle(HttpExchange exchange) throws IOException {
             java.util.Map<String, String> p = getQueryParams(exchange.getRequestURI().getQuery());
             try {
+                int minHab = p.get("minHab") != null ? Integer.parseInt(p.get("minHab")) : 0;
+                String estBusq = p.get("estBusq") != null ? p.get("estBusq") : "Activo";
+
                 Cliente c = new Cliente(p.get("id"), p.get("nom"), p.get("cor"), p.get("tel"), p.get("tip"), 
-                    Double.parseDouble(p.get("pre")), p.get("zon"), p.get("itm"));
+                    Double.parseDouble(p.get("pre")), p.get("zon"), p.get("itm"), minHab, estBusq);
                 sistema.registrarCliente(c);
                 sendResponse(exchange, "{\"status\":\"ok\"}", 200);
             } catch (Exception e) {
@@ -296,6 +381,23 @@ public class PropTechServer {
         }
     }
 
+    class LoginAsesorHandler implements HttpHandler {
+        @Override
+        public void handle(HttpExchange exchange) throws IOException {
+            java.util.Map<String, String> p = getQueryParams(exchange.getRequestURI().getQuery());
+            String id = p.get("id");
+            Asesor asesor = sistema.buscarAsesor(id);
+            
+            exchange.getResponseHeaders().set("Content-Type", "application/json; charset=UTF-8");
+            if (asesor != null) {
+                String response = "{\"status\":\"ok\", \"data\":" + JsonUtil.asesorToJson(asesor) + "}";
+                sendResponse(exchange, response, 200);
+            } else {
+                sendResponse(exchange, "{\"status\":\"error\", \"message\":\"Asesor no encontrado\"}", 404);
+            }
+        }
+    }
+
     class OperacionAddHandler implements HttpHandler {
         @Override
         public void handle(HttpExchange exchange) throws IOException {
@@ -331,6 +433,139 @@ public class PropTechServer {
             } catch (Exception e) {
                 sendResponse(exchange, "{\"status\":\"error\"}", 400);
             }
+        }
+    }
+
+    class AlertasHandler implements HttpHandler {
+        @Override
+        public void handle(HttpExchange exchange) throws IOException {
+            CustomList<String> alertas = sistema.generarAlertasSistema();
+            String response = JsonUtil.listToJson(alertas, s -> "\"" + s + "\"");
+            exchange.getResponseHeaders().set("Content-Type", "application/json; charset=UTF-8");
+            sendResponse(exchange, response, 200);
+        }
+    }
+
+    class AuditoriaHandler implements HttpHandler {
+        @Override
+        public void handle(HttpExchange exchange) throws IOException {
+            sistema.ejecutarAuditoriaComercial(); // Ejecutar motor antes de consultar
+            CustomList<EventoAnomalo> log = sistema.obtenerLogAnomalias();
+            String response = JsonUtil.listToJson(log, JsonUtil::eventoAnomaloToJson);
+            exchange.getResponseHeaders().set("Content-Type", "application/json; charset=UTF-8");
+            sendResponse(exchange, response, 200);
+        }
+    }
+
+    class RecomendacionesHandler implements HttpHandler {
+        @Override
+        public void handle(HttpExchange exchange) throws IOException {
+            java.util.Map<String, String> p = getQueryParams(exchange.getRequestURI().getQuery());
+            String idCli = p.get("cli");
+            if (idCli == null) {
+                sendResponse(exchange, "[]", 200);
+                return;
+            }
+            CustomList<Inmueble> recs = sistema.obtenerRecomendacionesHibridas(idCli);
+            String response = JsonUtil.listToJson(recs, JsonUtil::inmuebleToJson);
+            exchange.getResponseHeaders().set("Content-Type", "application/json; charset=UTF-8");
+            sendResponse(exchange, response, 200);
+        }
+    }
+
+    class UndoSnapshotHandler implements HttpHandler {
+        @Override
+        public void handle(HttpExchange exchange) throws IOException {
+            String res = sistema.revertirCambioInmueble();
+            sendResponse(exchange, "{\"message\":\"" + res + "\"}", 200);
+        }
+    }
+
+    class UndoAdminHandler implements HttpHandler {
+        @Override
+        public void handle(HttpExchange exchange) throws IOException {
+            String res = sistema.deshacerUltimaAccion();
+            sendResponse(exchange, "{\"message\":\"" + res + "\"}", 200);
+        }
+    }
+
+    class VisitaReprogramarHandler implements HttpHandler {
+        @Override
+        public void handle(HttpExchange exchange) throws IOException {
+            java.util.Map<String, String> p = getQueryParams(exchange.getRequestURI().getQuery());
+            boolean ok = sistema.reprogramarVisita(p.get("cli"), p.get("cod"), p.get("fec"), p.get("hor"));
+            sendResponse(exchange, "{\"status\":\"" + (ok ? "ok" : "error") + "\"}", 200);
+        }
+    }
+
+    class VisitaCancelarHandler implements HttpHandler {
+        @Override
+        public void handle(HttpExchange exchange) throws IOException {
+            java.util.Map<String, String> p = getQueryParams(exchange.getRequestURI().getQuery());
+            boolean ok = sistema.cancelarVisita(p.get("cli"), p.get("cod"));
+            sendResponse(exchange, "{\"status\":\"" + (ok ? "ok" : "error") + "\"}", 200);
+        }
+    }
+
+    class OperacionRenovarHandler implements HttpHandler {
+        @Override
+        public void handle(HttpExchange exchange) throws IOException {
+            java.util.Map<String, String> p = getQueryParams(exchange.getRequestURI().getQuery());
+            boolean ok = sistema.renovarContrato(p.get("id"), p.get("fec"), Double.parseDouble(p.get("val")));
+            sendResponse(exchange, "{\"status\":\"" + (ok ? "ok" : "error") + "\"}", 200);
+        }
+    }
+
+    class ReportesHandler implements HttpHandler {
+        @Override
+        public void handle(HttpExchange exchange) throws IOException {
+            // Generar un JSON con reportes por zona y cierres
+            CustomHashTable<String, Integer> visitasZona = sistema.getVisitasPorZona();
+            CustomList<Operacion> ops = sistema.obtenerOperacionesLista();
+            
+            StringBuilder sb = new StringBuilder("{");
+            sb.append("\"zonas\":[");
+            CustomList<String> keys = visitasZona.keys();
+            for (int i = 0; i < keys.getSize(); i++) {
+                String k = keys.get(i);
+                sb.append(String.format("{\"zona\":\"%s\", \"visitas\":%d}", k, visitasZona.get(k)));
+                if (i < keys.getSize() - 1) sb.append(",");
+            }
+            sb.append("],");
+            sb.append("\"cierres\":").append(ops.getSize());
+            sb.append("}");
+            
+            exchange.getResponseHeaders().set("Content-Type", "application/json; charset=UTF-8");
+            sendResponse(exchange, sb.toString(), 200);
+        }
+    }
+
+    class SimulacionDemandaHandler implements HttpHandler {
+        @Override
+        public void handle(HttpExchange exchange) throws IOException {
+            java.util.Map<String, String> p = getQueryParams(exchange.getRequestURI().getQuery());
+            String zona = p.get("zon");
+            int meses = p.get("mes") != null ? Integer.parseInt(p.get("mes")) : 12;
+            double crecimiento = sistema.simularCrecimientoDemanda(zona, meses);
+            sendResponse(exchange, String.format(java.util.Locale.US, "{\"zona\":\"%s\", \"crecimiento\":%.2f}", zona, crecimiento), 200);
+        }
+    }
+
+    class RankingsHandler implements HttpHandler {
+        @Override
+        public void handle(HttpExchange exchange) throws IOException {
+            CustomList<Asesor> asesores = sistema.obtenerRankingAsesoresEfectividad();
+            CustomList<String> zonas = sistema.obtenerRankingZonasActividad();
+            CustomList<Cliente> vips = sistema.obtenerClientesAltaProbabilidad();
+            
+            StringBuilder sb = new StringBuilder("{");
+            sb.append("\"asesores\":").append(JsonUtil.listToJson(asesores, JsonUtil::asesorToJson)).append(",");
+            sb.append("\"zonas\":").append(JsonUtil.listToJson(zonas, s -> "\"" + s + "\"")).append(",");
+            sb.append("\"vips\":").append(JsonUtil.listToJson(vips, JsonUtil::clienteToJson));
+            sb.append("}");
+            
+            exchange.getResponseHeaders().set("Content-Type", "application/json; charset=UTF-8");
+            sendResponse(exchange, sb.toString(), 200);
         }
     }
 }
