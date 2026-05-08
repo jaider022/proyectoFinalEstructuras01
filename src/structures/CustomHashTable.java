@@ -20,6 +20,7 @@ public class CustomHashTable<K, V> {
 
     // Calcula de forma matemática el índice (la "caja" o bucket) para una llave
     private int getBucketIndex(K key) {
+        if (key == null) return 0;
         int hashCode = key.hashCode();
         return Math.abs(hashCode % capacity);
     }

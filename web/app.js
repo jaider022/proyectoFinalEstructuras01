@@ -1,6 +1,7 @@
 let currentRole = 'guest'; // 'admin', 'asesor' o 'guest'
 let isRegistered = false;
 let currentClientId = null; 
+let currentClientFavorites = []; // IDs de inmuebles favoritos
 let globalProperties = []; // Para la barra de búsqueda
 let globalClients = [];
 let lightboxPhotos = [];
@@ -44,24 +45,33 @@ function setupInteractions() {
     };
 
     // Botones del Header Interno
-    document.getElementById('btn-header-register').onclick = () => {
+    const btnReg = document.getElementById('btn-header-register');
+    if(btnReg) btnReg.onclick = () => {
         document.getElementById('modal-register').style.display = 'flex';
     };
     
-    document.getElementById('btn-header-login').onclick = () => {
+    const btnLog = document.getElementById('btn-header-login');
+    if(btnLog) btnLog.onclick = () => {
         document.getElementById('modal-login').style.display = 'flex';
     };
     
-    document.getElementById('btn-header-logout').onclick = () => {
-        currentRole = 'guest';
-        applyRoleRestrictions();
-        // Volver a la Landing Page
-        document.getElementById('landing-view').style.display = 'flex';
-        document.getElementById('app-container').style.display = 'none';
-    };
+    const btnLogout = document.getElementById('btn-header-logout');
+    if (btnLogout) {
+        btnLogout.onclick = () => {
+            currentRole = 'guest';
+            currentClientId = null;
+            isRegistered = false;
+            fetchData();
+            switchView('dashboard');
+            document.getElementById('landing-view').style.display = 'flex';
+            document.getElementById('app-container').style.display = 'none';
+            applyRoleRestrictions();
+        };
+    }
     
     // Cerrar modal de registro manual
-    document.getElementById('close-register').onclick = () => {
+    const closeReg = document.getElementById('close-register');
+    if(closeReg) closeReg.onclick = () => {
         document.getElementById('modal-register').style.display = 'none';
     };
 
@@ -77,26 +87,49 @@ function setupInteractions() {
         };
     }
 
-    // Pestañas del Modal Login
-    const tabAdmin = document.getElementById('tab-login-admin');
-    const tabAsesor = document.getElementById('tab-login-asesor');
-    const formAdmin = document.getElementById('form-admin-login');
-    const formAsesor = document.getElementById('form-asesor-login');
+    // MODAL LOGIN UNIFICADO
+    const formUnifiedLogin = document.getElementById('form-unified-login');
+    if (formUnifiedLogin) {
+        formUnifiedLogin.onsubmit = async (e) => {
+            e.preventDefault();
+            const fd = new FormData(e.target);
+            const id = fd.get('id');
+            const pwd = fd.get('pwd');
 
-    if (tabAdmin) {
-        tabAdmin.onclick = () => {
-            tabAdmin.className = 'primary-btn';
-            tabAsesor.className = 'secondary-btn';
-            formAdmin.style.display = 'block';
-            formAsesor.style.display = 'none';
-        };
-    }
-    if (tabAsesor) {
-        tabAsesor.onclick = () => {
-            tabAsesor.className = 'primary-btn';
-            tabAdmin.className = 'secondary-btn';
-            formAsesor.style.display = 'block';
-            formAdmin.style.display = 'none';
+            try {
+                const res = await fetch(`/api/login/unified?id=${encodeURIComponent(id)}&pwd=${encodeURIComponent(pwd)}`);
+                const data = await res.json();
+
+                if (data.status === 'ok') {
+                    currentRole = data.role;
+                    currentClientId = (data.role === 'cliente' || data.role === 'asesor') ? data.id : null;
+                    isRegistered = (data.role === 'cliente');
+                    
+                    document.getElementById('modal-login').style.display = 'none';
+                    
+                    await fetchData();
+                    
+                    if (currentRole === 'admin') {
+                        switchView('dashboard');
+                    } else if (currentRole === 'asesor') {
+                        switchView('asesor-dashboard');
+                    } else if (currentRole === 'cliente') {
+                        switchView('dashboard'); // Ir al catálogo principal
+                    }
+                    
+                    // Actualizar UI
+                    document.getElementById('landing-view').style.display = 'none';
+                    document.getElementById('app-container').style.display = 'flex';
+                    applyRoleRestrictions();
+                    
+                    alert(`Bienvenido, acceso como ${currentRole.toUpperCase()}`);
+                } else {
+                    alert(data.message || "Error al iniciar sesión");
+                }
+            } catch (err) {
+                console.error("Login error:", err);
+                alert("Error de conexión con el servidor");
+            }
         };
     }
 
@@ -108,62 +141,6 @@ function setupInteractions() {
         };
     }
 
-    // Verificación de Clave Admin a través de API
-    const formAdminLogin = document.getElementById('form-admin-login');
-    if(formAdminLogin) {
-        formAdminLogin.onsubmit = async (e) => {
-            e.preventDefault();
-            const pwd = document.getElementById('admin-pwd').value;
-            try {
-                const res = await fetch(`/api/login?pwd=${encodeURIComponent(pwd)}`);
-                const result = await res.json();
-                if (result.status === 'ok') {
-                    currentRole = 'admin';
-                    document.getElementById('role-label').textContent = 'Administrador';
-                    document.getElementById('modal-login').style.display = 'none';
-                    e.target.reset();
-                    applyRoleRestrictions();
-                } else {
-                    alert(result.message || 'Clave incorrecta. Acceso denegado.');
-                    document.getElementById('admin-pwd').value = '';
-                }
-            } catch (err) {
-                alert('Error validando clave: ' + err.message);
-                document.getElementById('admin-pwd').value = '';
-            }
-        };
-    }
-
-    // Verificación de Asesor a través de API
-    if (formAsesor) {
-        formAsesor.onsubmit = async (e) => {
-            e.preventDefault();
-            const idInput = document.getElementById('asesor-id-input').value;
-            try {
-                const res = await fetch(`/api/login/asesor?id=${encodeURIComponent(idInput)}`);
-                const result = await res.json();
-                if (result.status === 'ok') {
-                    currentRole = 'asesor';
-                    document.getElementById('role-label').textContent = `Asesor: ${result.data.nombre}`;
-                    document.getElementById('modal-login').style.display = 'none';
-                    e.target.reset();
-                    applyRoleRestrictions();
-                    renderAsesorDashboard(result.data);
-                } else {
-                    alert(result.message || 'Asesor no encontrado.');
-                    document.getElementById('asesor-id-input').value = '';
-                }
-            } catch (err) {
-                alert('Error ingresando como asesor: ' + err.message);
-                document.getElementById('asesor-id-input').value = '';
-            }
-        };
-    }
-
-    document.getElementById('close-login').onclick = () => {
-        document.getElementById('modal-login').style.display = 'none';
-    };
-
 
     const formRegister = document.getElementById('form-register');
     formRegister.addEventListener('submit', async (e) => {
@@ -172,11 +149,19 @@ function setupInteractions() {
         const params = new URLSearchParams(fd).toString();
         currentClientId = fd.get('id');
         try {
-            await fetch(`/api/clientes/register?${params}&tip=Invitado&pre=0&zon=Norte&itm=Generico`);
+            console.log("Enviando registro para:", currentClientId);
+            const res = await fetch(`/api/clientes/register?${params}&tip=Invitado&pre=0&zon=Norte&itm=Generico`);
+            if (!res.ok) throw new Error("Error en el servidor al registrar");
+            
             isRegistered = true;
+            currentRole = 'cliente'; // Promocionar a cliente automáticamente
             document.getElementById('modal-register').style.display = 'none';
-            fetchData();
-        } catch (err) { alert('Error al registrar'); }
+            await fetchData();
+            switchView('dashboard');
+        } catch (err) {
+            console.error("Error en registro:", err);
+            alert("No se pudo completar el registro: " + err.message);
+        }
     });
 
     // Botones UNDO
@@ -322,11 +307,12 @@ function setupInteractions() {
 
         const params = new URLSearchParams(fd);
         
-        // Agregar ID del cliente actual (simulado o del registro)
-        const clienteId = document.querySelector('#form-register input[name="id"]').value || "C-DEMO";
+        // Agregar ID del cliente actual
+        const clienteId = currentClientId || document.querySelector('#form-register input[name="id"]').value || "C-DEMO";
         params.append('cli', clienteId);
 
         try {
+            console.log("Agendando cita para cliente:", clienteId, "Inmueble:", fd.get('cod'));
             const res = await fetch(`/api/visitas/agendar?${params.toString()}`);
             const result = await res.json();
             if (result.status === 'ok') {
@@ -338,10 +324,18 @@ function setupInteractions() {
                 document.getElementById('modal-schedule').style.display = 'none';
                 e.target.reset();
                 document.getElementById('slots-container').innerHTML = '<p style="font-size: 0.8rem; color: var(--text-muted);">Selecciona una fecha para ver horarios.</p>';
+                
+                // Actualizar panel de cliente si está activo
+                if (currentRole === 'cliente') {
+                    fetchClienteData();
+                }
             } else {
-                alert('Error: ' + result.message);
+                alert('No se pudo agendar: ' + (result.message || 'Error desconocido'));
             }
-        } catch (err) { alert('Error al agendar cita'); }
+        } catch (err) { 
+            console.error("Error al agendar:", err);
+            alert('Error al conectar con el servidor para agendar cita'); 
+        }
     };
 
     // Asesores (Modal)
@@ -611,19 +605,30 @@ function applyRoleRestrictions() {
             document.querySelectorAll('nav li').forEach(i => i.classList.remove('active'));
             document.querySelector('[data-view="asesor-dashboard"]').classList.add('active');
         }
+    } else if (currentRole === 'cliente') {
+        adminElements.forEach(el => el.style.display = 'none');
+        asesorElements.forEach(el => el.style.display = 'none');
+        guestOnlyElements.forEach(el => el.style.display = 'none');
+        loggedInElements.forEach(el => el.style.display = 'block');
+        document.querySelectorAll('.cliente-only').forEach(el => el.style.display = 'block');
+        
+        const lv = document.getElementById('landing-view');
+        const ac = document.getElementById('app-container');
+        if(lv) lv.style.display = 'none';
+        if(ac) ac.style.display = 'flex';
+        
+        document.getElementById('role-label').textContent = 'Cliente';
+        document.getElementById('role-label').style.display = 'block';
     } else {
         adminElements.forEach(el => el.style.display = 'none');
         asesorElements.forEach(el => el.style.display = 'none');
         guestOnlyElements.forEach(el => el.style.display = '');
         loggedInElements.forEach(el => el.style.display = 'none');
+        document.querySelectorAll('.cliente-only').forEach(el => el.style.display = 'none');
         
         if (fabAdmin) fabAdmin.style.display = 'none';
         deleteBtns.forEach(el => el.classList.remove('admin-visible'));
         adminVisibleOnly.forEach(el => el.style.display = 'none');
-        // No forzamos el modal-register aquí para mejorar la experiencia de prueba.
-        // if (!isRegistered) {
-        //     document.getElementById('modal-register').style.display = 'flex';
-        // }
         
         // Si el guest está en vista admin/asesor, mandar al dashboard
         const activeNav = document.querySelector('nav li.active');
@@ -668,36 +673,45 @@ async function fetchAuditoria() {
 
 async function fetchRecommendations() {
     if (!currentClientId) return;
-    const res = await fetch(`/api/recomendaciones?cli=${currentClientId}`);
-    const recs = await res.json();
-    
-    const container = document.getElementById('recommendations-container');
-    if (recs.length > 0) {
-        container.style.display = 'block';
-        renderProperties(recs, 'rec-props');
-    } else {
-        container.style.display = 'none';
-    }
+    try {
+        const res = await fetch(`/api/recomendaciones?cli=${currentClientId}`);
+        if (!res.ok) throw new Error("API error");
+        const recs = await res.json();
+        
+        const container = document.getElementById('recommendations-container');
+        if (recs && recs.length > 0) {
+            container.style.display = 'block';
+            renderProperties(recs, 'rec-props');
+        } else {
+            if (container) container.style.display = 'none';
+        }
+    } catch (e) { console.error("Error fetching recommendations:", e); }
 }
 
 async function fetchData() {
     try {
         const propRes = await fetch('/api/inmuebles');
-        const properties = await propRes.json();
-        globalProperties = properties; // Backup para búsqueda
+        const properties = propRes.ok ? await propRes.json() : [];
+        globalProperties = properties;
         
         const clientRes = await fetch('/api/clientes');
-        const clients = await clientRes.json();
-        globalClients = clients; // Backup para búsqueda
+        const clients = clientRes.ok ? await clientRes.json() : [];
+        globalClients = clients;
 
         const analitRes = await fetch('/api/analitica');
-        const analitics = await analitRes.json();
+        const analitics = analitRes.ok ? await analitRes.json() : null;
 
         const reportRes = await fetch('/api/reportes');
-        const reports = await reportRes.json();
+        const reports = reportRes.ok ? await reportRes.json() : null;
 
         renderStats(properties, clients, analitics);
-        renderReports(reports);
+        if (reports) renderReports(reports);
+        
+        if (isRegistered || currentRole === 'cliente') {
+            await fetchRecommendations();
+            if (currentClientId) await fetchClienteData();
+        }
+
         renderProperties(properties, 'featured-props');
         renderProperties(properties, 'all-props-grid');
         renderClients(clients);
@@ -706,12 +720,26 @@ async function fetchData() {
             fetchAuditoria();
             fetchAsesores();
         }
-        if (isRegistered) fetchRecommendations();
         
         applyRoleRestrictions();
     } catch (err) {
-        console.error('Error:', err);
+        console.error('Error in fetchData:', err);
     }
+}
+
+async function fetchClienteData() {
+    if (!currentClientId) return;
+    try {
+        const resFavs = await fetch(`/api/clientes/favoritos?id=${currentClientId}`);
+        if (!resFavs.ok) throw new Error("Error loading favorites");
+        const favs = await resFavs.json();
+        currentClientFavorites = favs.map(p => p.codigo);
+        console.log("Updated favorites count:", currentClientFavorites.length);
+        
+        if (document.getElementById('view-cliente-dashboard').style.display !== 'none') {
+            await renderClienteDashboard();
+        }
+    } catch (e) { console.error("Error fetching client data:", e); }
 }
 
 
@@ -725,6 +753,9 @@ function switchView(viewId) {
     }
     if (viewId === 'simulacion') {
         setupSimulacion();
+    }
+    if (viewId === 'cliente-dashboard') {
+        renderClienteDashboard();
     }
 }
 
@@ -754,18 +785,17 @@ async function setupSimulacion() {
 
 function renderStats(props, clients, analitics) {
     // 1. Actualizar Estadísticas en la Barra Lateral
-    document.getElementById('stat-props').textContent = props.length;
-    document.getElementById('stat-clients').textContent = clients.length;
-    document.getElementById('sidebar-stats').style.display = 'flex';
+    if (document.getElementById('stat-props')) document.getElementById('stat-props').textContent = props ? props.length : 0;
+    if (document.getElementById('stat-clients')) document.getElementById('stat-clients').textContent = clients ? clients.length : 0;
     
     if (analitics) {
         const statOps = document.getElementById('stat-ops');
-        if (statOps) statOps.textContent = analitics.operaciones;
+        if (statOps) statOps.textContent = analitics.operaciones || 0;
     }
 
     // 2. Generar Estadísticas por Tipo de Inmueble en el Dashboard
     const typeGrid = document.getElementById('type-stats-grid');
-    if (typeGrid) {
+    if (typeGrid && props) {
         typeGrid.innerHTML = '';
         
         // Contar por tipo
@@ -786,14 +816,14 @@ function renderStats(props, clients, analitics) {
             // Filtrar al hacer clic
             card.onclick = () => {
                 const searchInput = document.getElementById('main-search-input');
-                if (searchInput) searchInput.value = tipo;
-                
-                // Disparar evento input para activar la búsqueda global
-                const event = new Event('input', { bubbles: true });
-                searchInput.dispatchEvent(event);
-                
-                // Mover scroll hacia los inmuebles si es necesario
-                document.getElementById('featured-props').scrollIntoView({ behavior: 'smooth' });
+                if (searchInput) {
+                    searchInput.value = tipo;
+                    // Disparar evento input para activar la búsqueda global
+                    const event = new Event('input', { bubbles: true });
+                    searchInput.dispatchEvent(event);
+                    // Mover scroll hacia los inmuebles
+                    document.getElementById('featured-props').scrollIntoView({ behavior: 'smooth' });
+                }
             };
             typeGrid.appendChild(card);
         });
@@ -824,7 +854,10 @@ async function deleteProp(id) {
 
 function renderProperties(props, containerId) {
     const grid = document.getElementById(containerId);
-    if (!grid) return;
+    if (!grid || !props || !Array.isArray(props)) {
+        if (grid) grid.innerHTML = '<p style="color:var(--text-muted)">No hay inmuebles disponibles en esta sección.</p>';
+        return;
+    }
     grid.innerHTML = '';
 
     const backupPlaceholder = 'https://images.unsplash.com/photo-1570129477492-45c003edd2be?auto=format&fit=crop&w=800&q=80';
@@ -833,11 +866,13 @@ function renderProperties(props, containerId) {
         // Validación de imagen: si no hay fotos, o si la primera foto es demasiado corta para ser un objeto válido
         let coverImg = (p.fotos && p.fotos.length > 0 && p.fotos[0].length > 10) ? p.fotos[0] : backupPlaceholder;
         
+        const isFav = currentClientFavorites.includes(p.codigo);
         const card = document.createElement('div');
         card.className = 'property-card';
         card.onclick = () => showDetails(p);
         card.innerHTML = `
             <button class="delete-btn" onclick="event.stopPropagation(); deleteProp('${p.codigo}')">×</button>
+            ${(isRegistered || currentRole === 'cliente') ? `<button class="fav-btn ${isFav ? 'active' : ''}" onclick="event.stopPropagation(); toggleFavorite('${p.codigo}')">${isFav ? '❤️' : '🤍'}</button>` : ''}
             <div class="prop-img" style="background-image: url('${coverImg}')"></div>
             <div class="prop-info">
                 <span class="details">${p.tipo} • ${p.zona}</span>
@@ -848,6 +883,103 @@ function renderProperties(props, containerId) {
         `;
         grid.appendChild(card);
     });
+}
+
+async function toggleFavorite(codigo) {
+    if (!currentClientId) {
+        alert("Regístrate para guardar favoritos");
+        document.getElementById('modal-register').style.display = 'flex';
+        return;
+    }
+
+    const isFav = currentClientFavorites.includes(codigo);
+    const endpoint = isFav ? '/api/clientes/favoritos/remove' : '/api/clientes/favoritos/add';
+    
+    try {
+        console.log("Toggling favorite for client:", currentClientId, "Inmueble:", codigo);
+        const res = await fetch(`${endpoint}?cli=${currentClientId}&cod=${codigo}`);
+        if (res.ok) {
+            // Actualizar estado local inmediatamente para feedback visual rápido
+            if (isFav) {
+                currentClientFavorites = currentClientFavorites.filter(c => c !== codigo);
+            } else {
+                currentClientFavorites.push(codigo);
+            }
+            
+            // Refrescar datos globales
+            await fetchData(); 
+            
+            // Si estamos en el dashboard del cliente, forzar actualización inmediata
+            if (document.getElementById('view-cliente-dashboard').style.display !== 'none') {
+                await renderClienteDashboard();
+            }
+            console.log("Toggled favorite successfully");
+        } else {
+            const errorText = await res.text();
+            console.error("Error en respuesta de favoritos:", res.status, errorText);
+            alert("No se pudo actualizar favoritos en el servidor.");
+        }
+    } catch (e) { 
+        console.error("Error toggling favorite", e); 
+        alert("Error de conexión al actualizar favoritos.");
+    }
+}
+
+async function renderClienteDashboard() {
+    if (!currentClientId) {
+        console.warn("Attempted to render client dashboard without currentClientId");
+        return;
+    }
+    
+    try {
+        console.log("Rendering client dashboard for:", currentClientId);
+        const [resFavs, resVisits] = await Promise.all([
+            fetch(`/api/clientes/favoritos?id=${currentClientId}`),
+            fetch(`/api/clientes/visitas?id=${currentClientId}`)
+        ]);
+        
+        const favs = await resFavs.json();
+        const visits = await resVisits.json();
+        console.log("Dashboard data loaded. Favs:", favs.length, "Visits:", visits.length);
+
+        // Renderizar favoritos
+        renderProperties(favs, 'cliente-favs-grid');
+
+        // Renderizar visitas
+        const visitList = document.getElementById('cliente-visits-list');
+        if (visitList) {
+            visitList.innerHTML = '';
+            if (!visits || visits.length === 0) {
+                visitList.innerHTML = '<p style="color:var(--text-muted)">No tienes visitas agendadas.</p>';
+            } else {
+                visits.forEach(v => {
+                    const card = document.createElement('div');
+                    card.className = 'visit-card-compact';
+                    card.innerHTML = `
+                        <div class="info">
+                            <h4>${v.inmueble ? v.inmueble.direccion : 'Inmueble desconocido'}</h4>
+                            <p>📅 ${v.fecha} | ⏰ ${v.hora}</p>
+                            <p style="font-size:0.75rem;">Asesor: ${v.asesor ? v.asesor.nombre : 'Por asignar'}</p>
+                        </div>
+                        <div class="status" style="background:${v.estado === 'Pendiente' ? '#fef3c7' : '#dcfce7'}; color:${v.estado === 'Pendiente' ? '#92400e' : '#166534'};">
+                            ${v.estado}
+                        </div>
+                    `;
+                    visitList.appendChild(card);
+                });
+            }
+        }
+
+        // Actualizar badge
+        const welcomeBadge = document.getElementById('cliente-welcome-badge');
+        if (welcomeBadge) {
+            const cliente = globalClients.find(c => c.id === currentClientId);
+            if (cliente) {
+                welcomeBadge.textContent = `Hola, ${cliente.nombre}`;
+            }
+        }
+
+    } catch (e) { console.error("Error rendering client dashboard:", e); }
 }
 
 function showDetails(p) {

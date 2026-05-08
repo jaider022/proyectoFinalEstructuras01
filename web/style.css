@@ -265,7 +265,7 @@ header {
     top: 0; left: 0; width: 100%; height: 100%;
     background: rgba(0,0,0,0.4);
     backdrop-filter: blur(4px);
-    z-index: 1000;
+    z-index: 10000;
     display: flex;
     align-items: center; justify-content: center;
 }
@@ -605,6 +605,55 @@ select {
 .asesor-only { display: none; } /* Oculto por defecto */
 .guest-only { display: inline-block; } /* Visible por defecto */
 .logged-in-only { display: none; } /* Oculto por defecto */
+.cliente-only { display: none; }
+
+/* Favoritos Heart Icon */
+.fav-btn {
+    position: absolute;
+    top: 10px;
+    left: 10px;
+    background: rgba(255, 255, 255, 0.8);
+    border: none;
+    width: 35px;
+    height: 35px;
+    border-radius: 50%;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.2rem;
+    transition: all 0.3s;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+    z-index: 10;
+}
+
+.fav-btn:hover {
+    transform: scale(1.1);
+    background: white;
+}
+
+.fav-btn.active {
+    color: #ef4444;
+}
+
+.visit-card-compact {
+    background: white;
+    padding: 15px;
+    border-radius: 12px;
+    border: 1px solid #e2e8f0;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.visit-card-compact .info h4 { margin: 0; font-size: 0.95rem; }
+.visit-card-compact .info p { margin: 5px 0 0 0; font-size: 0.8rem; color: var(--text-muted); }
+.visit-card-compact .status {
+    padding: 4px 10px;
+    border-radius: 20px;
+    font-size: 0.75rem;
+    font-weight: 600;
+}
 
 /* Auditoría & Anomalías (Req 4.9 & 5.7) */
 .auditoria-layout {

@@ -37,8 +37,7 @@ public class PropTechServer {
         server.createContext("/api/clientes/register", new ClienteRegisterHandler());
         server.createContext("/api/visitas/agendar", new VisitaAgendarHandler());
         server.createContext("/api/visitas/slots", new VisitaSlotsHandler());
-        server.createContext("/api/login", new LoginHandler());
-        server.createContext("/api/login/asesor", new LoginAsesorHandler());
+        server.createContext("/api/login/unified", new UnifiedLoginHandler());
         server.createContext("/api/operaciones/add", new OperacionAddHandler());
         server.createContext("/api/analitica", new AnaliticaHandler());
         server.createContext("/api/asesores", new AsesoresHandler());
@@ -54,6 +53,10 @@ public class PropTechServer {
         server.createContext("/api/reportes", new ReportesHandler());
         server.createContext("/api/simulacion/demanda", new SimulacionDemandaHandler());
         server.createContext("/api/rankings", new RankingsHandler());
+        server.createContext("/api/clientes/favoritos", new ClienteFavoritosHandler());
+        server.createContext("/api/clientes/favoritos/add", new ClienteFavoritosAddHandler());
+        server.createContext("/api/clientes/favoritos/remove", new ClienteFavoritosRemoveHandler());
+        server.createContext("/api/clientes/visitas", new ClienteVisitasHandler());
 
         server.setExecutor(null);
         System.out.println("Servidor PropTech iniciado en http://localhost:" + port);
@@ -367,34 +370,39 @@ public class PropTechServer {
         }
     }
 
-    class LoginHandler implements HttpHandler {
-        @Override
-        public void handle(HttpExchange exchange) throws IOException {
-            java.util.Map<String, String> p = getQueryParams(exchange.getRequestURI().getQuery());
-            String pwd = p.get("pwd");
-            if ("admin123".equals(pwd)) {
-                sendResponse(exchange, "{\"status\":\"ok\"}", 200);
-            } else {
-                exchange.getResponseHeaders().set("Content-Type", "application/json; charset=UTF-8");
-                sendResponse(exchange, "{\"status\":\"error\", \"message\":\"Clave incorrecta\"}", 401);
-            }
-        }
-    }
-
-    class LoginAsesorHandler implements HttpHandler {
+    class UnifiedLoginHandler implements HttpHandler {
         @Override
         public void handle(HttpExchange exchange) throws IOException {
             java.util.Map<String, String> p = getQueryParams(exchange.getRequestURI().getQuery());
             String id = p.get("id");
-            Asesor asesor = sistema.buscarAsesor(id);
+            String pwd = p.get("pwd");
+            
+            String response = "";
+            int code = 200;
+            
+            // 1. Verificar si es Admin
+            if ("admin".equalsIgnoreCase(id) && "admin123".equals(pwd)) {
+                response = "{\"status\":\"ok\", \"role\":\"admin\", \"id\":\"admin\"}";
+            } 
+            // 2. Verificar si es Asesor
+            else if (sistema.buscarAsesor(id) != null) {
+                Asesor a = sistema.buscarAsesor(id);
+                response = String.format("{\"status\":\"ok\", \"role\":\"asesor\", \"id\":\"%s\", \"data\":%s}", 
+                    id, JsonUtil.asesorToJson(a));
+            }
+            // 3. Verificar si es Cliente
+            else if (sistema.buscarCliente(id) != null) {
+                Cliente c = sistema.buscarCliente(id);
+                response = String.format("{\"status\":\"ok\", \"role\":\"cliente\", \"id\":\"%s\", \"data\":%s}", 
+                    id, JsonUtil.clienteToJson(c));
+            }
+            else {
+                response = "{\"status\":\"error\", \"message\":\"Usuario no encontrado o credenciales inválidas\"}";
+                code = 401;
+            }
             
             exchange.getResponseHeaders().set("Content-Type", "application/json; charset=UTF-8");
-            if (asesor != null) {
-                String response = "{\"status\":\"ok\", \"data\":" + JsonUtil.asesorToJson(asesor) + "}";
-                sendResponse(exchange, response, 200);
-            } else {
-                sendResponse(exchange, "{\"status\":\"error\", \"message\":\"Asesor no encontrado\"}", 404);
-            }
+            sendResponse(exchange, response, code);
         }
     }
 
@@ -566,6 +574,54 @@ public class PropTechServer {
             
             exchange.getResponseHeaders().set("Content-Type", "application/json; charset=UTF-8");
             sendResponse(exchange, sb.toString(), 200);
+        }
+    }
+
+    class ClienteFavoritosHandler implements HttpHandler {
+        @Override
+        public void handle(HttpExchange exchange) throws IOException {
+            java.util.Map<String, String> p = getQueryParams(exchange.getRequestURI().getQuery());
+            Cliente c = sistema.buscarCliente(p.get("id"));
+            if (c != null) {
+                String response = JsonUtil.listToJson(c.getFavoritos(), JsonUtil::inmuebleToJson);
+                exchange.getResponseHeaders().set("Content-Type", "application/json; charset=UTF-8");
+                sendResponse(exchange, response, 200);
+            } else {
+                sendResponse(exchange, "[]", 200);
+            }
+        }
+    }
+
+    class ClienteFavoritosAddHandler implements HttpHandler {
+        @Override
+        public void handle(HttpExchange exchange) throws IOException {
+            java.util.Map<String, String> p = getQueryParams(exchange.getRequestURI().getQuery());
+            sistema.agregarAFavoritos(p.get("cli"), p.get("cod"));
+            sendResponse(exchange, "{\"status\":\"ok\"}", 200);
+        }
+    }
+
+    class ClienteFavoritosRemoveHandler implements HttpHandler {
+        @Override
+        public void handle(HttpExchange exchange) throws IOException {
+            java.util.Map<String, String> p = getQueryParams(exchange.getRequestURI().getQuery());
+            sistema.removerDeFavoritos(p.get("cli"), p.get("cod"));
+            sendResponse(exchange, "{\"status\":\"ok\"}", 200);
+        }
+    }
+
+    class ClienteVisitasHandler implements HttpHandler {
+        @Override
+        public void handle(HttpExchange exchange) throws IOException {
+            java.util.Map<String, String> p = getQueryParams(exchange.getRequestURI().getQuery());
+            Cliente c = sistema.buscarCliente(p.get("id"));
+            if (c != null) {
+                String response = JsonUtil.listToJson(c.getHistorialVisitas(), JsonUtil::visitaToJson);
+                exchange.getResponseHeaders().set("Content-Type", "application/json; charset=UTF-8");
+                sendResponse(exchange, response, 200);
+            } else {
+                sendResponse(exchange, "[]", 200);
+            }
         }
     }
 }

@@ -55,6 +55,7 @@
                     <li data-view="analetica" class="admin-only" style="display:none">Analítica</li>
                     <li data-view="auditoria" class="admin-only" style="display:none">Auditoría</li>
                     <li data-view="simulacion" class="admin-only" style="display:none">Simulación Demanda</li>
+                    <li data-view="cliente-dashboard" class="cliente-only" style="display:none">Mi Panel (Cliente)</li>
                 </ul>
             </nav>
             
@@ -256,6 +257,31 @@
                         </div>
                     </div>
                 </div>
+
+                <!-- VISTA 8: MI PANEL (CLIENTE) -->
+                <div id="view-cliente-dashboard" class="content-view" style="display:none;">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem;">
+                        <h2 class="section-title" style="margin: 0;">Mi Panel de Cliente</h2>
+                        <div id="cliente-welcome-badge" style="background: var(--soft-blue); padding: 8px 16px; border-radius: 20px; color: var(--accent-color); font-weight: 600;">
+                            Bienvenido
+                        </div>
+                    </div>
+
+                    <div class="dashboard-sections" style="display: grid; grid-template-columns: 1.2fr 0.8fr; gap: 2rem;">
+                        <div class="favs-section">
+                            <h3 style="margin-bottom: 1.5rem; display: flex; align-items: center; gap: 10px;">❤️ Mis Favoritos</h3>
+                            <div class="property-grid" id="cliente-favs-grid">
+                                <!-- Cargado por JS -->
+                            </div>
+                        </div>
+                        <div class="visits-section">
+                            <h3 style="margin-bottom: 1.5rem; display: flex; align-items: center; gap: 10px;">📅 Mis Visitas</h3>
+                            <div id="cliente-visits-list" style="display: flex; flex-direction: column; gap: 15px;">
+                                <!-- Cargado por JS -->
+                            </div>
+                        </div>
+                    </div>
+                </div>
         </main>
     </div>
 
@@ -392,27 +418,18 @@
         <div class="modal">
             <span class="close-btn" id="close-login">&times;</span>
             <h2>Iniciar Sesión</h2>
-            <p>Selecciona tu tipo de cuenta para ingresar:</p>
+            <p>Ingresa tu identificación para entrar al sistema.</p>
             
-            <div style="display: flex; gap: 10px; margin-bottom: 15px;">
-                <button id="tab-login-admin" class="primary-btn" style="flex: 1;">Administrador</button>
-                <button id="tab-login-asesor" class="secondary-btn" style="flex: 1;">Asesor</button>
-            </div>
-
-            <!-- Form Admin -->
-            <form id="form-admin-login" style="margin-top: 10px;">
-                <input type="password" name="pwd" id="admin-pwd" placeholder="Clave Maestra" required>
-                <div style="display: flex; gap: 10px; margin-top: 10px;">
-                    <button type="submit" class="primary-btn" style="flex: 1;">Entrar (Admin)</button>
+            <form id="form-unified-login" style="margin-top: 20px;">
+                <div class="input-group">
+                    <label>ID / Identificación</label>
+                    <input type="text" name="id" id="login-id" placeholder="Ej: admin, A-001, C-001" required>
                 </div>
-            </form>
-
-            <!-- Form Asesor -->
-            <form id="form-asesor-login" style="margin-top: 10px; display: none;">
-                <input type="text" name="id" id="asesor-id-input" placeholder="ID de Asesor (Ej: A-001)" required>
-                <div style="display: flex; gap: 10px; margin-top: 10px;">
-                    <button type="submit" class="primary-btn" style="flex: 1;">Entrar (Asesor)</button>
+                <div class="input-group" id="login-pwd-group">
+                    <label>Contraseña (Solo Admin)</label>
+                    <input type="password" name="pwd" id="login-pwd" placeholder="Clave (si aplica)">
                 </div>
+                <button type="submit" class="primary-btn" style="width: 100%; margin-top: 10px;">Entrar</button>
             </form>
         </div>
     </div>
@@ -449,7 +466,7 @@
     </div>
 
     <!-- MODAL LIGHTBOX PARA IMÁGENES -->
-    <div id="modal-lightbox" class="overlay" style="display:none; z-index: 2000; background-color: rgba(0,0,0,0.9); align-items: center; justify-content: center;">
+    <div id="modal-lightbox" class="overlay" style="display:none; z-index: 11000; background-color: rgba(0,0,0,0.9); align-items: center; justify-content: center;">
         <span class="close-btn" id="close-lightbox" style="position: absolute; top: 20px; right: 30px; font-size: 40px; color: white; cursor: pointer; z-index: 2001;">&times;</span>
         <span id="lightbox-prev" style="position: absolute; left: 30px; font-size: 60px; color: white; cursor: pointer; user-select: none; z-index: 2001; text-shadow: 0 0 10px rgba(0,0,0,0.8); font-weight: bold;">&#10094;</span>
         <img id="lightbox-img" src="" style="max-width: 80vw; max-height: 90vh; margin: auto; display: block; border-radius: 8px; box-shadow: 0 0 20px rgba(0,0,0,0.5); object-fit: contain;">

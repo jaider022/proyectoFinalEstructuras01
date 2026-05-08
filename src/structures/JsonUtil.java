@@ -9,38 +9,37 @@ import java.util.Iterator;
  */
 public class JsonUtil {
 
+    private static String escapeJson(String s) {
+        if (s == null) return "";
+        return s.replace("\\", "\\\\").replace("\"", "\\\"").replace("\n", "\\n").replace("\r", "\\r");
+    }
+
     public static String inmuebleToJson(Inmueble i) {
         if (i == null) return "null";
-        String listJson = listToJson(i.getFotos(), s -> "\"" + s + "\"");
-        String asesorJson = i.getAsesorResponsable() != null ? 
-            String.format("{\"nombre\":\"%s\", \"contacto\":\"%s\"}", i.getAsesorResponsable().getNombre(), i.getAsesorResponsable().getContacto()) : "null";
+        String listJson = listToJson(i.getFotos(), s -> "\"" + escapeJson(s) + "\"");
+        
+        String asesorJson = "null";
+        if (i.getAsesorResponsable() != null) {
+            asesorJson = String.format("{\"nombre\":\"%s\", \"contacto\":\"%s\"}", 
+                escapeJson(i.getAsesorResponsable().getNombre()), 
+                escapeJson(i.getAsesorResponsable().getContacto()));
+        }
         
         return String.format(java.util.Locale.US,
             "{\"codigo\":\"%s\", \"direccion\":\"%s\", \"ciudad\":\"%s\", \"tipo\":\"%s\", \"precio\":%.2f, \"zona\":\"%s\", \"finalidad\":\"%s\", \"area\":%.2f, \"areaT\":%.2f, \"hab\":%d, \"banos\":%d, \"estadoFisico\":\"%s\", \"disponibilidad\":\"%s\", \"asesor\":%s, \"fotos\":%s}",
-            i.getCodigo(), i.getDireccion(), i.getCiudad(), i.getTipo(), i.getPrecio(), i.getZona(), i.getFinalidad(), i.getArea(), i.getAreaTerreno(), i.getHabitaciones(), i.getBanos(), i.getEstadoFisico(), i.getDisponibilidad(), asesorJson, listJson
+            escapeJson(i.getCodigo()), escapeJson(i.getDireccion()), escapeJson(i.getCiudad()), escapeJson(i.getTipo()), i.getPrecio(), escapeJson(i.getZona()), escapeJson(i.getFinalidad()), i.getArea(), i.getAreaTerreno(), i.getHabitaciones(), i.getBanos(), escapeJson(i.getEstadoFisico()), escapeJson(i.getDisponibilidad()), asesorJson, listJson
         );
     }
 
     public static String asesorToJson(Asesor a) {
         if (a == null) return "null";
         
-        // Serializar arreglo de códigos de inmuebles
-        String inmueblesJson = listToJson(a.getInmueblesAsignados(), i -> "\"" + i.getCodigo() + "\"");
-        
-        // Serializar visitas pendientes (CustomQueue) extrayendo sus elementos
+        String inmueblesJson = listToJson(a.getInmueblesAsignados(), i -> "\"" + escapeJson(i.getCodigo()) + "\"");
         CustomQueue<Visita> colaVisitas = a.getVisitasPendientes();
-        StringBuilder visitasStr = new StringBuilder("[");
-        // Nota: asumiendo que no desencolamos para no perder la información, iteramos o lo mantenemos simple.
-        // Como CustomQueue puede no tener un iterador público simple en este proyecto, 
-        // vamos a simularlo convirtiendo a lista temporal si es posible, 
-        // o si no, lo representaremos con el conteo, pero intentemos serializar su contenido:
-        // En este caso, para no alterar la cola, simplemente enviaremos un string de resumen o array si hay forma.
-        // Dado que Visita no tiene método fácil de acceder, dejaremos un array vacío si no podemos iterar,
-        // O mejor: a.getVisitasPendientes().getSize() para el conteo.
         
         return String.format(java.util.Locale.US,
             "{\"id\":\"%s\", \"nombre\":\"%s\", \"contacto\":\"%s\", \"zona\":\"%s\", \"cierres\":%d, \"inmueblesCount\":%d, \"inmuebles\":%s, \"visitasCount\":%d}",
-            a.getIdentificacion(), a.getNombre(), a.getContacto(), a.getEspecialidadZona(), a.getCierresRealizados(), a.getInmueblesAsignados().getSize(), inmueblesJson, colaVisitas.getSize()
+            escapeJson(a.getIdentificacion()), escapeJson(a.getNombre()), escapeJson(a.getContacto()), escapeJson(a.getEspecialidadZona()), a.getCierresRealizados(), a.getInmueblesAsignados().getSize(), inmueblesJson, colaVisitas.getSize()
         );
     }
 
@@ -48,7 +47,7 @@ public class JsonUtil {
         if (c == null) return "null";
         return String.format(java.util.Locale.US,
             "{\"id\":\"%s\", \"nombre\":\"%s\", \"correo\":\"%s\", \"telefono\":\"%s\", \"tipo\":\"%s\", \"presupuesto\":%.2f, \"zona\":\"%s\", \"minHabitaciones\":%d, \"estadoBusqueda\":\"%s\"}",
-            c.getIdentificacion(), c.getNombre(), c.getCorreo(), c.getTelefono(), c.getTipoCliente(), c.getPresupuesto(), c.getZonasDeInteres(), c.getMinHabitaciones(), c.getEstadoBusqueda()
+            escapeJson(c.getIdentificacion()), escapeJson(c.getNombre()), escapeJson(c.getCorreo()), escapeJson(c.getTelefono()), escapeJson(c.getTipoCliente()), c.getPresupuesto(), escapeJson(c.getZonasDeInteres()), c.getMinHabitaciones(), escapeJson(c.getEstadoBusqueda())
         );
     }
 
@@ -56,15 +55,33 @@ public class JsonUtil {
         if (e == null) return "null";
         return String.format(java.util.Locale.US,
             "{\"tipo\":\"%s\", \"idEntidad\":\"%s\", \"descripcion\":\"%s\", \"nivel\":\"%s\", \"timestamp\":\"%s\"}",
-            e.getTipo(), e.getEntidadId(), e.getDescripcion(), e.getNivelAtencion(), e.getFechaDeteccion()
+            escapeJson(e.getTipo()), escapeJson(e.getEntidadId()), escapeJson(e.getDescripcion()), escapeJson(e.getNivelAtencion()), escapeJson(e.getFechaDeteccion())
+        );
+    }
+
+    public static String visitaToJson(Visita v) {
+        if (v == null) return "null";
+        String inmuebleJson = inmuebleToJson(v.getInmueble());
+        String asesorJson = "null";
+        if (v.getAsesorAsignado() != null) {
+            asesorJson = String.format("{\"nombre\":\"%s\", \"contacto\":\"%s\"}", 
+                escapeJson(v.getAsesorAsignado().getNombre()), 
+                escapeJson(v.getAsesorAsignado().getContacto()));
+        }
+        
+        return String.format(java.util.Locale.US,
+            "{\"fecha\":\"%s\", \"hora\":\"%s\", \"estado\":\"%s\", \"observaciones\":\"%s\", \"inmueble\":%s, \"asesor\":%s}",
+            escapeJson(v.getFecha()), escapeJson(v.getHora()), escapeJson(v.getEstado()), escapeJson(v.getObservaciones()), inmuebleJson, asesorJson
         );
     }
 
     public static <T> String listToJson(CustomList<T> list, java.util.function.Function<T, String> mapper) {
         StringBuilder sb = new StringBuilder("[");
-        for (int i = 0; i < list.getSize(); i++) {
-            sb.append(mapper.apply(list.get(i)));
-            if (i < list.getSize() - 1) sb.append(",");
+        if (list != null) {
+            for (int i = 0; i < list.getSize(); i++) {
+                sb.append(mapper.apply(list.get(i)));
+                if (i < list.getSize() - 1) sb.append(",");
+            }
         }
         sb.append("]");
         return sb.toString();

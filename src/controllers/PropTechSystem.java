@@ -291,6 +291,15 @@ public class PropTechSystem {
         }
     }
 
+    public void removerDeFavoritos(String idCliente, String codInmueble) {
+        Cliente c = buscarCliente(idCliente);
+        Inmueble i = buscarInmueble(codInmueble);
+        if (c != null && i != null) {
+            c.removerFavorito(i);
+            historialAdministrativo.push("Cliente " + idCliente + " eliminó de favoritos el inmueble " + codInmueble);
+        }
+    }
+
     // --- MÓDULO DE ANALÍTICA Y RECOMENDACIONES ---
 
     public void detectarComportamientoInusual() {
