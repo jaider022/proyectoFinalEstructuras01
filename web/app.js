@@ -191,6 +191,7 @@ function setupInteractions() {
     document.getElementById('btn-add-prop').addEventListener('click', () => {
         document.getElementById('modal-add-prop').style.display = 'flex';
         document.getElementById('form-add-prop').reset();
+        document.getElementById('prop-is-update').value = 'false';
         document.querySelector('#form-add-prop [name="cod"]').readOnly = false;
         document.getElementById('modal-add-prop').querySelector('h2').textContent = 'Agregar Nuevo Inmueble';
         document.querySelector('#form-add-prop button[type="submit"]').textContent = 'Registrar Propiedad';
@@ -1078,6 +1079,7 @@ function showDetails(p) {
             document.getElementById('modal-add-prop').querySelector('h2').textContent = 'Editar Inmueble';
             
             const f = document.getElementById('form-add-prop');
+            document.getElementById('prop-is-update').value = 'true';
             f.elements['cod'].value = p.codigo || '';
             f.elements['cod'].readOnly = true; // Para no cambiar el identificador primario
             f.elements['dir'].value = p.direccion || '';

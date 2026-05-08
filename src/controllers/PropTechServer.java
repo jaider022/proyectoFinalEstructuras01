@@ -282,6 +282,14 @@ public class PropTechServer {
                     }
                 }
                 
+                boolean isUpdate = "true".equals(p.get("isUpdate"));
+                
+                // VALIDACIÓN DE DUPLICADOS: Si no es actualización y el código ya existe, error.
+                if (!isUpdate && sistema.buscarInmueble(p.get("cod")) != null) {
+                    sendResponse(exchange, "{\"status\":\"error\", \"message\":\"El código '" + p.get("cod") + "' ya está en uso por otro inmueble.\"}", 400);
+                    return;
+                }
+
                 sistema.registrarInmueble(n);
                 sendResponse(exchange, "{\"status\":\"ok\"}", 200);
             } catch (Exception e) {
