@@ -350,13 +350,16 @@
                     <input type="text" name="cod" placeholder="Código (ej: INM-100)" required>
                     <input type="text" name="dir" placeholder="Dirección" required>
                     <input type="text" name="ciu" placeholder="Ciudad" required>
-                    <select name="tip" required>
+                    <select name="tip" id="prop-tip-select" required>
                         <option value="" disabled selected>Tipo de Inmueble</option>
                         <option value="Casa">Casa</option>
                         <option value="Apartamento">Apartamento</option>
-                        <option value="Lote">Lote/Terreno</option>
+                        <option value="Oficina">Oficina</option>
                         <option value="Local">Local Comercial</option>
+                        <option value="Lote">Lote/Terreno</option>
+                        <option value="Otro">Otro (Especificar...)</option>
                     </select>
+                    <input type="text" id="custom-tip" placeholder="¿Qué tipo de inmueble es? (Ej: Apartaestudio)" style="display:none; margin-top: 5px; grid-column: span 2;">
                     <input type="number" name="pre" placeholder="Precio ($)" required>
                     <input type="text" name="zon" placeholder="Zona/Barrio" required>
                     <select name="fin" required>
@@ -435,8 +438,6 @@
         </div>
     </div>
 
-    <!-- BOTÓN FLOTANTE ADMINISTRADOR -->
-    <button id="fab-admin" class="fab admin-only" style="display:none" title="Acceso Rápido Administrador">AD</button>
 
     <!-- MODAL CERRAR NEGOCIO -->
     <div id="modal-operacion" class="overlay" style="display:none">

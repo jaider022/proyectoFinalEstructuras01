@@ -20,29 +20,41 @@ public class MainWeb {
 
         Inmueble inm1 = new Inmueble("INM-01", "Calle 100 #15", "Bogotá", "Norte", "Apartamento", "Venta", 450000.0, 85,
                 0, 3, 2, "Usado", "Disponible");
-        inm1.getFotos().add("/assets/img/APARTAMENTOS/A1.jpg");
-        inm1.getFotos().add("/assets/img/APARTAMENTOS/A2.jpg");
+        cargarFotos(inm1, "APARTAMENTOS", "A", 6);
         inm1.setAsesorResponsable(maria);
 
         Inmueble inm2 = new Inmueble("INM-02", "Carrera 7 #72", "Bogotá", "Chapinero", "Apartamento", "Arriendo",
                 5500.0, 120, 0, 2, 2, "Remodelado", "Disponible");
-        inm2.getFotos().add("/assets/img/APARTAMENTOS/B1.jpg");
+        cargarFotos(inm2, "APARTAMENTOS", "B", 6);
         inm2.setAsesorResponsable(juan);
 
         Inmueble inm3 = new Inmueble("INM-03", "Avenida 19 #100", "Bogotá", "Norte", "Oficina", "Venta", 890000.0, 200,
                 0, 0, 4, "Nuevo", "Disponible");
-        inm3.getFotos().add("/assets/img/OFICINAS/A1.jpg");
+        cargarFotos(inm3, "OFICINAS", "A", 4);
         inm3.setAsesorResponsable(maria);
 
         Inmueble inm4 = new Inmueble("INM-04", "Calle 127 #45", "Bogotá", "Colina", "Casa", "Venta", 670000.0, 150, 200,
                 4, 3, "Usado", "Disponible");
-        inm4.getFotos().add("/assets/img/CASAS/A1.jpg");
+        cargarFotos(inm4, "CASAS", "A", 5);
         inm4.setAsesorResponsable(laura);
+
+        // Nuevos inmuebles para completar el catálogo
+        Inmueble inm5 = new Inmueble("INM-05", "Calle 140 #11", "Bogotá", "Norte", "Apartamento", "Venta", 320000.0, 70,
+                0, 2, 2, "Usado", "Disponible");
+        cargarFotos(inm5, "APARTAMENTOS", "C", 9);
+        inm5.setAsesorResponsable(maria);
+
+        Inmueble inm6 = new Inmueble("INM-06", "Calle 80 #68", "Bogotá", "Norte", "Apartamento", "Arriendo", 2500.0, 65,
+                0, 2, 1, "Nuevo", "Disponible");
+        cargarFotos(inm6, "APARTAMENTOS", "D", 6);
+        inm6.setAsesorResponsable(juan);
 
         sistema.registrarInmueble(inm1);
         sistema.registrarInmueble(inm2);
         sistema.registrarInmueble(inm3);
         sistema.registrarInmueble(inm4);
+        sistema.registrarInmueble(inm5);
+        sistema.registrarInmueble(inm6);
 
         Cliente c1 = new Cliente("C-01", "Jaider Admin", "jaider@proptech.com", "311", "Comprador", 1000000.0, "Norte",
                 "Apto", 0, "Activo");
@@ -65,7 +77,7 @@ public class MainWeb {
         for (int i = 1; i <= 10; i++) {
             Asesor as = (i % 3 == 0) ? juan : (i % 2 == 0) ? laura : maria;
             Cliente cl = (i % 2 == 0) ? c1 : c4;
-            Inmueble in = (i % 2 == 0) ? inm1 : inm4;
+            Inmueble in = (i % 3 == 0) ? inm2 : (i % 2 == 0) ? inm1 : inm4;
             double val = (i * 100000.0);
             Operacion op = new Operacion("OP-SIM-" + i, in, cl, as, "2026-04-" + (10 + i), "Venta", val, val * 0.05);
             sistema.registrarOperacion(op);
@@ -86,4 +98,15 @@ public class MainWeb {
             System.err.println("Error al iniciar el servidor: " + e.getMessage());
         }
     }
+
+    /**
+     * Método auxiliar para cargar múltiples fotos de una carpeta basándose en un prefijo (letra).
+     */
+    private static void cargarFotos(Inmueble inm, String carpeta, String letra, int cantidad) {
+        for (int i = 1; i <= cantidad; i++) {
+            String path = "/assets/img/" + carpeta + "/" + letra + i + ".jpg";
+            inm.getFotos().add(path);
+        }
+    }
 }
+

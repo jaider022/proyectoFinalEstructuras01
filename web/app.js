@@ -191,6 +191,14 @@ function setupInteractions() {
     document.getElementById('btn-add-prop').addEventListener('click', () => {
         document.getElementById('modal-add-prop').style.display = 'flex';
         document.getElementById('form-add-prop').reset();
+        
+        // Resetear campo personalizado
+        const ct = document.getElementById('custom-tip');
+        if(ct) {
+            ct.style.display = 'none';
+            ct.required = false;
+        }
+
         document.getElementById('prop-is-update').value = 'false';
         document.querySelector('#form-add-prop [name="cod"]').readOnly = false;
         document.getElementById('modal-add-prop').querySelector('h2').textContent = 'Agregar Nuevo Inmueble';
@@ -201,10 +209,30 @@ function setupInteractions() {
         document.getElementById('modal-add-prop').style.display = 'none';
     });
 
+    const propTipSelect = document.getElementById('prop-tip-select');
+    const customTipInput = document.getElementById('custom-tip');
+    if (propTipSelect && customTipInput) {
+        propTipSelect.addEventListener('change', (e) => {
+            if (e.target.value === 'Otro') {
+                customTipInput.style.display = 'block';
+                customTipInput.required = true;
+            } else {
+                customTipInput.style.display = 'none';
+                customTipInput.required = false;
+            }
+        });
+    }
+
     document.getElementById('form-add-prop').addEventListener('submit', async (e) => {
         e.preventDefault();
         const fd = new FormData(e.target);
         const data = Object.fromEntries(fd.entries());
+        
+        // Si el tipo es 'Otro', usar el valor del campo personalizado
+        if (data.tip === 'Otro') {
+            const customTip = document.getElementById('custom-tip').value;
+            if (customTip) data.tip = customTip;
+        }
         
         // Procesar archivos locales (nuevas fotos)
         const fileInput = document.getElementById('photo-file-input');
@@ -557,7 +585,6 @@ function applyRoleRestrictions() {
     const loggedInElements = document.querySelectorAll('.logged-in-only');
     const deleteBtns = document.querySelectorAll('.delete-btn');
     const adminVisibleOnly = document.querySelectorAll('.admin-visible-only');
-    const fabAdmin = document.getElementById('fab-admin');
     
     if (currentRole === 'admin') {
         adminElements.forEach(el => {
@@ -570,7 +597,6 @@ function applyRoleRestrictions() {
         guestOnlyElements.forEach(el => el.style.display = 'none');
         loggedInElements.forEach(el => el.style.display = 'block');
         
-        if (fabAdmin) fabAdmin.style.display = 'flex';
         deleteBtns.forEach(el => el.style.display = 'flex');
         adminVisibleOnly.forEach(el => el.style.display = 'flex');
         document.getElementById('modal-register').style.display = 'none';
@@ -1084,7 +1110,22 @@ function showDetails(p) {
             f.elements['cod'].readOnly = true; // Para no cambiar el identificador primario
             f.elements['dir'].value = p.direccion || '';
             f.elements['ciu'].value = p.ciudad || 'Bogotá';
-            f.elements['tip'].value = p.tipo || '';
+            
+            // Lógica inteligente para tipos personalizados
+            const defaultTypes = ["Casa", "Apartamento", "Oficina", "Local", "Lote"];
+            const ct = document.getElementById('custom-tip');
+            if (defaultTypes.includes(p.tipo)) {
+                f.elements['tip'].value = p.tipo || '';
+                if(ct) { ct.style.display = 'none'; ct.required = false; }
+            } else {
+                f.elements['tip'].value = "Otro";
+                if(ct) {
+                    ct.style.display = 'block';
+                    ct.required = true;
+                    ct.value = p.tipo || '';
+                }
+            }
+            
             f.elements['pre'].value = p.precio || '';
             f.elements['zon'].value = p.zona || '';
             f.elements['fin'].value = p.finalidad || 'Venta';
