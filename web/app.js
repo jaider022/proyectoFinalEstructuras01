@@ -13,6 +13,41 @@ document.addEventListener('DOMContentLoaded', () => {
     setupInteractions();
 });
 
+/**
+ * Muestra una notificación elegante (Toast) en pantalla.
+ * @param {string} title Título del mensaje
+ * @param {string} msg Contenido del mensaje
+ * @param {string} type 'success', 'error', 'info'
+ */
+function showNotification(title, msg, type = 'info') {
+    const container = document.getElementById('toast-container');
+    if (!container) return;
+
+    const toast = document.createElement('div');
+    toast.className = `toast ${type}`;
+    
+    let icon = 'ℹ️';
+    if (type === 'success') icon = '✅';
+    if (type === 'error') icon = '❌';
+
+    toast.innerHTML = `
+        <div class="toast-icon">${icon}</div>
+        <div class="toast-content">
+            <strong class="toast-title">${title}</strong>
+            <div class="toast-msg">${msg}</div>
+        </div>
+    `;
+
+    container.appendChild(toast);
+
+    // Auto-eliminar del DOM después de que termine la animación
+    setTimeout(() => {
+        if (toast.parentNode) {
+            container.removeChild(toast);
+        }
+    }, 5000);
+}
+
 
 
 function setupNavigation() {
@@ -61,15 +96,11 @@ function setupInteractions() {
             currentRole = 'guest';
             currentClientId = null;
             isRegistered = false;
-            
-            // Mantenerse en la app, pero como invitado
             fetchData();
             switchView('dashboard');
-            
-            // NO ocultamos el app-container, solo aplicamos restricciones
+            document.getElementById('landing-view').style.display = 'flex';
+            document.getElementById('app-container').style.display = 'none';
             applyRoleRestrictions();
-            
-            alert("Sesión cerrada. Ahora navegas como invitado.");
         };
     }
     
@@ -126,13 +157,13 @@ function setupInteractions() {
                     document.getElementById('app-container').style.display = 'flex';
                     applyRoleRestrictions();
                     
-                    alert(`Bienvenido, acceso como ${currentRole.toUpperCase()}`);
+                    showNotification('¡Bienvenido!', `Acceso como ${data.role.toUpperCase()}`, 'success');
                 } else {
-                    alert(data.message || "Error al iniciar sesión");
+                    showNotification('Error de Acceso', data.message || "Credenciales incorrectas", 'error');
                 }
             } catch (err) {
                 console.error("Login error:", err);
-                alert("Error de conexión con el servidor");
+                showNotification('Error del Servidor', "No se pudo conectar con el motor de PropTech", 'error');
             }
         };
     }
@@ -353,7 +384,7 @@ function setupInteractions() {
                 const property = globalProperties.find(p => p.codigo === propCode);
                 const asesorNombre = (property && property.asesor && property.asesor.nombre !== 'null') ? property.asesor.nombre : 'nuestro equipo de ventas';
                 
-                alert(`¡Cita agendada con éxito!\n\nSerás atendido por el asesor: ${asesorNombre}. ¡Te esperamos!`);
+                showNotification('Cita Agendada', `Serás atendido por: ${asesorNombre}. ¡Te esperamos!`, 'success');
                 document.getElementById('modal-schedule').style.display = 'none';
                 e.target.reset();
                 document.getElementById('slots-container').innerHTML = '<p style="font-size: 0.8rem; color: var(--text-muted);">Selecciona una fecha para ver horarios.</p>';
@@ -497,14 +528,14 @@ function setupInteractions() {
                 const res = await fetch(`/api/operaciones/add?${params}`);
                 const result = await res.json();
                 if (result.status === 'ok') {
-                    alert('Operación registrada exitosamente');
+                    showNotification('Operación Exitosa', 'El negocio se ha registrado y el estado del inmueble actualizado.', 'success');
                     document.getElementById('modal-operacion').style.display = 'none';
                     e.target.reset();
                     fetchData(); // Recargar todo
                 } else {
-                    alert('Error: ' + result.message);
+                    showNotification('Error', result.message, 'error');
                 }
-            } catch(err) { alert('Error de red al registrar operación'); }
+            } catch(err) { showNotification('Error de Red', 'No se pudo registrar la operación en el servidor.', 'error'); }
         };
     }
 
@@ -612,6 +643,10 @@ function applyRoleRestrictions() {
         const ac = document.getElementById('app-container');
         if(lv) lv.style.display = 'none';
         if(ac) ac.style.display = 'flex';
+        
+        const roleBadge = document.getElementById('role-badge');
+        if (roleBadge) roleBadge.style.display = 'flex';
+        document.getElementById('role-label').textContent = 'Admin';
 
         console.log("Admin mode active");
     } else if (currentRole === 'asesor') {
@@ -619,7 +654,7 @@ function applyRoleRestrictions() {
         asesorElements.forEach(el => el.style.display = '');
         commercialElements.forEach(el => el.style.display = 'inline-block');
         guestOnlyElements.forEach(el => el.style.display = 'none');
-        loggedInElements.forEach(el => el.style.display = '');
+        loggedInElements.forEach(el => el.style.display = 'block');
         
         if (fabAdmin) fabAdmin.style.display = 'none';
         deleteBtns.forEach(el => el.classList.remove('admin-visible'));
@@ -631,6 +666,10 @@ function applyRoleRestrictions() {
         const ac = document.getElementById('app-container');
         if(lv) lv.style.display = 'none';
         if(ac) ac.style.display = 'flex';
+        
+        const roleBadge = document.getElementById('role-badge');
+        if (roleBadge) roleBadge.style.display = 'flex';
+        document.getElementById('role-label').textContent = 'Asesor';
         
         // Redirigir a panel asesor si estaban en admin view
         const activeNav = document.querySelector('nav li.active');
@@ -651,8 +690,9 @@ function applyRoleRestrictions() {
         if(lv) lv.style.display = 'none';
         if(ac) ac.style.display = 'flex';
         
+        const roleBadge = document.getElementById('role-badge');
+        if (roleBadge) roleBadge.style.display = 'flex';
         document.getElementById('role-label').textContent = 'Cliente';
-        document.getElementById('role-label').style.display = 'block';
     } else {
         adminElements.forEach(el => el.style.display = 'none');
         document.querySelectorAll('.cliente-only').forEach(el => el.style.display = 'none');
@@ -661,6 +701,8 @@ function applyRoleRestrictions() {
         if (fabAdmin) fabAdmin.style.display = 'none';
         deleteBtns.forEach(el => el.classList.remove('admin-visible'));
         adminVisibleOnly.forEach(el => el.style.display = 'none');
+        const roleBadge = document.getElementById('role-badge');
+        if (roleBadge) roleBadge.style.display = 'none';
         
         // Si el guest está en vista admin/asesor, mandar al dashboard
         const activeNav = document.querySelector('nav li.active');
@@ -900,12 +942,28 @@ function renderProperties(props, containerId) {
         
         const isFav = currentClientFavorites.includes(p.codigo);
         const card = document.createElement('div');
-        card.className = 'property-card';
+        
+        // Determinar estado visual
+        let statusClass = "";
+        let badgeHtml = "";
+        const disp = (p.disponibilidad || "").toLowerCase();
+        
+        if (disp === "vendido") {
+            statusClass = "sold";
+            badgeHtml = `<div class="prop-status-badge badge-vendido">Vendido</div>`;
+        } else if (disp === "arrendado") {
+            statusClass = "rented";
+            badgeHtml = `<div class="prop-status-badge badge-arrendado">Arrendado</div>`;
+        }
+
+        card.className = `property-card ${statusClass}`;
         card.onclick = () => showDetails(p);
         card.innerHTML = `
             <button class="delete-btn" onclick="event.stopPropagation(); deleteProp('${p.codigo}')">×</button>
             ${(isRegistered || currentRole === 'cliente') ? `<button class="fav-btn ${isFav ? 'active' : ''}" onclick="event.stopPropagation(); toggleFavorite('${p.codigo}')">${isFav ? '❤️' : '🤍'}</button>` : ''}
-            <div class="prop-img" style="background-image: url('${coverImg}')"></div>
+            <div class="prop-img" style="background-image: url('${coverImg}')">
+                ${badgeHtml}
+            </div>
             <div class="prop-info">
                 <span class="details">${p.tipo} • ${p.zona}</span>
                 <h4>${p.direccion}</h4>
@@ -1072,6 +1130,18 @@ function showDetails(p) {
     }
 
     document.getElementById('schedule-cod').value = p.codigo;
+    
+    // Ocultar botón de agendar si no está disponible
+    const btnSchedule = document.getElementById('btn-schedule-visit');
+    const dispLower = (p.disponibilidad || "").toLowerCase();
+    if (btnSchedule) {
+        if (dispLower === "vendido" || dispLower === "arrendado") {
+            btnSchedule.style.display = 'none';
+        } else {
+            btnSchedule.style.display = 'inline-flex';
+        }
+    }
+
     // Renderizar miniaturas reales
     const thumbs = document.getElementById('thumb-grid');
     thumbs.innerHTML = '';
@@ -1172,6 +1242,18 @@ function showDetails(p) {
     // Lógica del Botón Cerrar Negocio
     const btnCerrar = document.getElementById('btn-change-status');
     if (btnCerrar) {
+        const dispLower = (p.disponibilidad || "").toLowerCase();
+        const isSoldOrRented = dispLower === "vendido" || dispLower === "arrendado";
+        
+        if (currentRole === 'asesor' && isSoldOrRented) {
+            btnCerrar.style.display = 'none';
+        } else if (currentRole === 'admin' || currentRole === 'asesor') {
+            // El admin siempre lo ve (por si debe corregir), el asesor solo si está disponible
+            btnCerrar.style.display = 'inline-block';
+        } else {
+            btnCerrar.style.display = 'none';
+        }
+
         btnCerrar.onclick = () => {
             openOperacionModal(p.codigo, p.direccion, p.precio);
         };
@@ -1356,16 +1438,22 @@ function renderAsesorDashboard(asesor) {
                 div.style.border = '1px solid #e2e8f0';
                 div.style.borderRadius = '8px';
                 div.style.background = '#f8fafc';
+                const dispLower = (propData.disponibilidad || "").toLowerCase();
+                const isAvailable = dispLower === "disponible";
+
                 div.innerHTML = `
                     <div style="display:flex; justify-content:space-between; align-items:center;">
                         <div>
                             <div style="font-weight:bold; color:var(--text-main);">${propData.tipo} en ${propData.zona}</div>
                             <div style="font-size:0.85rem; color:var(--text-muted);">${propData.codigo} - ${propData.direccion}</div>
                             <div style="margin-top:5px; font-size:0.9rem; font-weight:600;">$${propData.precio.toLocaleString()} (${propData.finalidad})</div>
+                            <div style="font-size:0.75rem; color:${isAvailable ? '#22c55e' : '#ef4444'}; font-weight:bold;">Estado: ${propData.disponibilidad}</div>
                         </div>
-                        <button class="secondary-btn" style="padding: 5px 10px; font-size: 0.8rem;" onclick="event.stopPropagation(); openOperacionModal('${propData.codigo}', '${propData.direccion}', ${propData.precio})">
-                            Cerrar
-                        </button>
+                        ${isAvailable ? `
+                            <button class="secondary-btn" style="padding: 5px 10px; font-size: 0.8rem;" onclick="event.stopPropagation(); openOperacionModal('${propData.codigo}', '${propData.direccion}', ${propData.precio})">
+                                Cerrar
+                            </button>
+                        ` : ''}
                     </div>
                 `;
                 propsContainer.appendChild(div);

@@ -27,7 +27,9 @@ Este archivo registra las modificaciones, actualizaciones y solicitudes realizad
 **Autor:** Jaider
 **Solicitud:** Permitir que los asesores registren cuando venden o arriendan una propiedad (especialmente oficinas) mediante una casilla o botón.
 **Cambios realizados:**
-- **Acceso a Operaciones:** Se habilitó el botón "Cerrar Negocio" para el rol de Asesor en la vista de detalles de cualquier inmueble.
-- **Botón Directo en Dashboard:** Se añadió un botón "Cerrar" en la lista de inmuebles asignados del Panel de Asesor para facilitar el registro de ventas/arriendos.
-- **Lógica Refactorizada:** Se creó la función global `openOperacionModal` para estandarizar el proceso de cierre de negocios desde diferentes partes de la interfaz.
-- **Mejora en Cierre de Sesión:** Se ajustó el logout para que el usuario permanezca en el catálogo como invitado en lugar de ser redirigido a la pantalla de inicio.
+- **Seguridad de Acceso:** Se implementó la validación de contraseña para asesores (ID + clave "123") en el servidor.
+- **Flujo de Navegación:** Se restauró el cierre de sesión para redirigir a la Landing Page, mejorando la seguridad del cierre de cuenta.
+- **Gestión Comercial:** Los asesores ya pueden cerrar negocios (Venta/Arriendo) con visualización de estado en tiempo real.
+- **Seguridad Operativa:** Se bloqueó la modificación de inmuebles ya vendidos/arrendados para el rol de asesor, dejando esta facultad solo al administrador.
+- **Identidad Visual:** Nuevo badge de perfil con iconos en el encabezado y marcas de agua (Vendido/Arrendado) en el catálogo de propiedades.
+- **Optimización de Búsqueda:** Se ajustó el motor de filtros para que los inmuebles no disponibles sigan siendo visibles con su respectiva marca de agua, demostrando éxito comercial.

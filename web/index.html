@@ -97,8 +97,11 @@
                         <button id="btn-header-register" class="secondary-btn guest-only">Registrarse</button>
                         <button id="btn-header-login" class="primary-btn guest-only">Iniciar Sesión</button>
                         
-                        <span id="role-label" class="logged-in-only" style="font-size: 0.9rem; font-weight: 500; display:none;"></span>
-                        <button id="btn-header-logout" class="secondary-btn logged-in-only" style="display:none; border-color: #ef4444; color: #ef4444;">Cerrar Sesión</button>
+                        <div id="role-badge" class="logged-in-only" style="display:none; align-items: center; gap: 8px; background: var(--soft-blue); padding: 6px 14px; border-radius: 20px; border: 1px solid var(--accent-color); color: var(--accent-color);">
+                            <span style="font-size: 1.2rem;">👤</span>
+                            <span id="role-label" style="font-size: 0.85rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px;"></span>
+                        </div>
+                        <button id="btn-header-logout" class="secondary-btn logged-in-only" style="display:none; border-color: #ef4444; color: #ef4444; padding: 8px 16px; font-size: 0.9rem; border-radius: 20px;">Cerrar Sesión</button>
                     </div>
                 </div>
             </header>
@@ -545,6 +548,9 @@
         </div>
     </div>
 
+    <!-- CONTENEDOR DE NOTIFICACIONES -->
+    <div id="toast-container" class="toast-container"></div>
+    
     <script src="app.js"></script>
 </body>
 </html>

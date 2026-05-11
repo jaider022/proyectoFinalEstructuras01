@@ -388,25 +388,30 @@ public class PropTechServer {
             String response = "";
             int code = 200;
             
-            // 1. Verificar si es Admin
-            if ("admin".equalsIgnoreCase(id) && "admin123".equals(pwd)) {
-                response = "{\"status\":\"ok\", \"role\":\"admin\", \"id\":\"admin\"}";
-            } 
-            // 2. Verificar si es Asesor
-            else if (sistema.buscarAsesor(id) != null) {
-                Asesor a = sistema.buscarAsesor(id);
-                response = String.format("{\"status\":\"ok\", \"role\":\"asesor\", \"id\":\"%s\", \"data\":%s}", 
-                    id, JsonUtil.asesorToJson(a));
-            }
-            // 3. Verificar si es Cliente
-            else if (sistema.buscarCliente(id) != null) {
-                Cliente c = sistema.buscarCliente(id);
-                response = String.format("{\"status\":\"ok\", \"role\":\"cliente\", \"id\":\"%s\", \"data\":%s}", 
-                    id, JsonUtil.clienteToJson(c));
-            }
-            else {
-                response = "{\"status\":\"error\", \"message\":\"Usuario no encontrado o credenciales inválidas\"}";
-                code = 401;
+            try {
+                // 1. Verificar si es Admin
+                if ("admin".equalsIgnoreCase(id) && "admin123".equals(pwd)) {
+                    response = "{\"status\":\"ok\", \"role\":\"admin\", \"id\":\"admin\"}";
+                } 
+                // 2. Verificar si es Asesor
+                else if (id != null && sistema.buscarAsesor(id) != null && "123".equals(pwd)) {
+                    Asesor a = sistema.buscarAsesor(id);
+                    response = String.format("{\"status\":\"ok\", \"role\":\"asesor\", \"id\":\"%s\", \"data\":%s}", 
+                        id, JsonUtil.asesorToJson(a));
+                }
+                // 3. Verificar si es Cliente
+                else if (id != null && sistema.buscarCliente(id) != null) {
+                    Cliente c = sistema.buscarCliente(id);
+                    response = String.format("{\"status\":\"ok\", \"role\":\"cliente\", \"id\":\"%s\", \"data\":%s}", 
+                        id, JsonUtil.clienteToJson(c));
+                }
+                else {
+                    response = "{\"status\":\"error\", \"message\":\"Usuario no encontrado o credenciales inválidas\"}";
+                    code = 401;
+                }
+            } catch (Exception ex) {
+                response = "{\"status\":\"error\", \"message\":\"Error interno en el servidor\"}";
+                code = 500;
             }
             
             exchange.getResponseHeaders().set("Content-Type", "application/json; charset=UTF-8");
