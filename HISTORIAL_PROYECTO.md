@@ -30,3 +30,4 @@ Este archivo registra las modificaciones, actualizaciones y solicitudes realizad
 - **Acceso a Operaciones:** Se habilitó el botón "Cerrar Negocio" para el rol de Asesor en la vista de detalles de cualquier inmueble.
 - **Botón Directo en Dashboard:** Se añadió un botón "Cerrar" en la lista de inmuebles asignados del Panel de Asesor para facilitar el registro de ventas/arriendos.
 - **Lógica Refactorizada:** Se creó la función global `openOperacionModal` para estandarizar el proceso de cierre de negocios desde diferentes partes de la interfaz.
+- **Mejora en Cierre de Sesión:** Se ajustó el logout para que el usuario permanezca en el catálogo como invitado en lugar de ser redirigido a la pantalla de inicio.

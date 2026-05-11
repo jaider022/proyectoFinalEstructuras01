@@ -61,11 +61,15 @@ function setupInteractions() {
             currentRole = 'guest';
             currentClientId = null;
             isRegistered = false;
+            
+            // Mantenerse en la app, pero como invitado
             fetchData();
             switchView('dashboard');
-            document.getElementById('landing-view').style.display = 'flex';
-            document.getElementById('app-container').style.display = 'none';
+            
+            // NO ocultamos el app-container, solo aplicamos restricciones
             applyRoleRestrictions();
+            
+            alert("Sesión cerrada. Ahora navegas como invitado.");
         };
     }
     
