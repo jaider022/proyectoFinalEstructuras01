@@ -585,6 +585,7 @@ function applyRoleRestrictions() {
     const loggedInElements = document.querySelectorAll('.logged-in-only');
     const deleteBtns = document.querySelectorAll('.delete-btn');
     const adminVisibleOnly = document.querySelectorAll('.admin-visible-only');
+    const commercialElements = document.querySelectorAll('.commercial-only');
     
     if (currentRole === 'admin') {
         adminElements.forEach(el => {
@@ -594,6 +595,7 @@ function applyRoleRestrictions() {
             else el.style.display = 'inline-block';
         });
         asesorElements.forEach(el => el.style.display = 'none');
+        commercialElements.forEach(el => el.style.display = 'inline-block');
         guestOnlyElements.forEach(el => el.style.display = 'none');
         loggedInElements.forEach(el => el.style.display = 'block');
         
@@ -611,6 +613,7 @@ function applyRoleRestrictions() {
     } else if (currentRole === 'asesor') {
         adminElements.forEach(el => el.style.display = 'none');
         asesorElements.forEach(el => el.style.display = '');
+        commercialElements.forEach(el => el.style.display = 'inline-block');
         guestOnlyElements.forEach(el => el.style.display = 'none');
         loggedInElements.forEach(el => el.style.display = '');
         
@@ -648,10 +651,8 @@ function applyRoleRestrictions() {
         document.getElementById('role-label').style.display = 'block';
     } else {
         adminElements.forEach(el => el.style.display = 'none');
-        asesorElements.forEach(el => el.style.display = 'none');
-        guestOnlyElements.forEach(el => el.style.display = '');
-        loggedInElements.forEach(el => el.style.display = 'none');
         document.querySelectorAll('.cliente-only').forEach(el => el.style.display = 'none');
+        commercialElements.forEach(el => el.style.display = 'none');
         
         if (fabAdmin) fabAdmin.style.display = 'none';
         deleteBtns.forEach(el => el.classList.remove('admin-visible'));
@@ -1168,17 +1169,7 @@ function showDetails(p) {
     const btnCerrar = document.getElementById('btn-change-status');
     if (btnCerrar) {
         btnCerrar.onclick = () => {
-            document.getElementById('modal-details').style.display = 'none';
-            document.getElementById('modal-operacion').style.display = 'flex';
-            document.getElementById('op-cod').value = p.codigo;
-            document.getElementById('op-inmueble-info').value = `${p.codigo} - ${p.direccion}`;
-            document.getElementById('op-valor').value = p.precio;
-            
-            const sel = document.getElementById('op-cliente-select');
-            sel.innerHTML = '<option value="" disabled selected>Selecciona el cliente...</option>';
-            globalClients.forEach(c => {
-                sel.innerHTML += `<option value="${c.id}">${c.nombre} (${c.id})</option>`;
-            });
+            openOperacionModal(p.codigo, p.direccion, p.precio);
         };
     }
 
@@ -1362,9 +1353,16 @@ function renderAsesorDashboard(asesor) {
                 div.style.borderRadius = '8px';
                 div.style.background = '#f8fafc';
                 div.innerHTML = `
-                    <div style="font-weight:bold; color:var(--text-main);">${propData.tipo} en ${propData.zona}</div>
-                    <div style="font-size:0.85rem; color:var(--text-muted);">${propData.codigo} - ${propData.direccion}</div>
-                    <div style="margin-top:5px; font-size:0.9rem; font-weight:600;">$${propData.precio.toLocaleString()} (${propData.finalidad})</div>
+                    <div style="display:flex; justify-content:space-between; align-items:center;">
+                        <div>
+                            <div style="font-weight:bold; color:var(--text-main);">${propData.tipo} en ${propData.zona}</div>
+                            <div style="font-size:0.85rem; color:var(--text-muted);">${propData.codigo} - ${propData.direccion}</div>
+                            <div style="margin-top:5px; font-size:0.9rem; font-weight:600;">$${propData.precio.toLocaleString()} (${propData.finalidad})</div>
+                        </div>
+                        <button class="secondary-btn" style="padding: 5px 10px; font-size: 0.8rem;" onclick="event.stopPropagation(); openOperacionModal('${propData.codigo}', '${propData.direccion}', ${propData.precio})">
+                            Cerrar
+                        </button>
+                    </div>
                 `;
                 propsContainer.appendChild(div);
             }
@@ -1452,3 +1450,18 @@ async function loadAnalitica() {
         console.error("Error cargando analítica:", err);
     }
 }
+
+// Función global para abrir el modal de cerrar negocio
+window.openOperacionModal = (codigo, direccion, precio) => {
+    document.getElementById('modal-details').style.display = 'none';
+    document.getElementById('modal-operacion').style.display = 'flex';
+    document.getElementById('op-cod').value = codigo;
+    document.getElementById('op-inmueble-info').value = `${codigo} - ${direccion}`;
+    document.getElementById('op-valor').value = precio;
+    
+    const sel = document.getElementById('op-cliente-select');
+    sel.innerHTML = '<option value="" disabled selected>Selecciona el cliente...</option>';
+    globalClients.forEach(c => {
+        sel.innerHTML += `<option value="${c.id}">${c.nombre} (${c.id})</option>`;
+    });
+};

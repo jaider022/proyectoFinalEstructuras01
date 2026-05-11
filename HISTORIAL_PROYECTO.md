@@ -21,9 +21,12 @@ Este archivo registra las modificaciones, actualizaciones y solicitudes realizad
 
 ---
 
-## [2026-05-11] - Creación del Sistema de Historial
+---
+
+## [2026-05-11] - Gestión de Ventas para Asesores
 **Autor:** Jaider
-**Solicitud:** Crear un registro para llevar el historial de comentarios y cambios.
-**Cambio realizado:**
-- Creación del archivo `HISTORIAL_PROYECTO.md` en la raíz del proyecto para fácil acceso.
-- Configuración del formato para seguimiento de tareas y responsables (Jaider, Jeison, Juanita).
+**Solicitud:** Permitir que los asesores registren cuando venden o arriendan una propiedad (especialmente oficinas) mediante una casilla o botón.
+**Cambios realizados:**
+- **Acceso a Operaciones:** Se habilitó el botón "Cerrar Negocio" para el rol de Asesor en la vista de detalles de cualquier inmueble.
+- **Botón Directo en Dashboard:** Se añadió un botón "Cerrar" en la lista de inmuebles asignados del Panel de Asesor para facilitar el registro de ventas/arriendos.
+- **Lógica Refactorizada:** Se creó la función global `openOperacionModal` para estandarizar el proceso de cierre de negocios desde diferentes partes de la interfaz.
