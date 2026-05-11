@@ -23,7 +23,7 @@ Este archivo registra las modificaciones, actualizaciones y solicitudes realizad
 
 ## [2026-05-11] - Creación del Sistema de Historial
 **Autor:** Jaider
-**Solicitud:** Crear una carpeta y un archivo para llevar el registro de comentarios y cambios automáticos.
+**Solicitud:** Crear un registro para llevar el historial de comentarios y cambios.
 **Cambio realizado:**
-- Creación de la carpeta `historial/` y el archivo `cambios.md`.
-- Configuración del formato para seguimiento de tareas y responsables.
+- Creación del archivo `HISTORIAL_PROYECTO.md` en la raíz del proyecto para fácil acceso.
+- Configuración del formato para seguimiento de tareas y responsables (Jaider, Jeison, Juanita).
