@@ -1,20 +1,22 @@
 :root {
     --bg-color: #f8fafc;
-    --sidebar-bg: #ffffff;
-    --accent-color: #6366f1;
-    --text-main: #1e293b;
-    --text-muted: #64748b;
-    --card-bg: rgba(255, 255, 255, 0.8);
-    --soft-blue: #e0e7ff;
-    --soft-green: #dcfce7;
-    --radius: 16px;
-    --shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+    --sidebar-bg: rgba(255, 255, 255, 0.65);
+    --accent-color: #4f46e5;
+    --accent-glow: 0 10px 20px -10px rgba(79, 70, 229, 0.8);
+    --text-main: #0f172a;
+    --text-muted: #475569;
+    --card-bg: rgba(255, 255, 255, 0.75);
+    --soft-blue: rgba(224, 231, 255, 0.8);
+    --soft-green: rgba(220, 252, 231, 0.8);
+    --radius: 24px;
+    --shadow: 0 8px 32px rgba(31, 38, 135, 0.08);
+    --border-color: rgba(255, 255, 255, 0.5);
 }
 
 body {
     margin: 0;
     font-family: 'Outfit', sans-serif;
-    background-color: var(--bg-color);
+    background: #f1f5f9;
     color: var(--text-main);
     overflow: hidden;
 }
@@ -22,16 +24,23 @@ body {
 .app-container {
     display: flex;
     height: 100vh;
+    background: linear-gradient(135deg, #e0c3fc 0%, #8ec5fc 100%);
+    position: relative;
+    z-index: 1;
 }
 
 /* Sidebar Styling */
 .sidebar {
     width: 260px;
     background-color: var(--sidebar-bg);
-    border-right: 1px solid #e2e8f0;
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border-right: 1px solid var(--border-color);
     padding: 2rem;
     display: flex;
     flex-direction: column;
+    z-index: 2;
+    box-shadow: 4px 0 24px rgba(0,0,0,0.04);
 }
 
 .logo {
