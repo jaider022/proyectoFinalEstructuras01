@@ -539,11 +539,38 @@
                         <input type="number" name="ban" id="filter-ban" placeholder="Cualquiera" min="0">
                     </div>
                     <div class="input-group">
+                        <label>Precio Mínimo ($)</label>
+                        <input type="number" name="preMin" id="filter-pre-min" placeholder="Desde 0" min="0">
+                    </div>
+                    <div class="input-group">
                         <label>Precio Máximo ($)</label>
                         <input type="number" name="preMax" id="filter-pre" placeholder="Sin límite" min="0">
                     </div>
                 </div>
                 <button type="submit" class="primary-btn" style="margin-top: 20px; width: 100%;">Aplicar Filtros</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- MODAL REPROGRAMAR CITA (CLIENTE) -->
+    <div id="modal-reprogram" class="overlay" style="display:none">
+        <div class="modal">
+            <span class="close-btn" id="close-reprogram">&times;</span>
+            <h2>Reprogramar Visita</h2>
+            <p style="margin-bottom: 15px; font-size: 0.9rem; color: var(--text-muted);">Selecciona una nueva fecha y hora para tu visita.</p>
+            <form id="form-reprogram">
+                <input type="hidden" name="cli" id="reprogram-cli">
+                <input type="hidden" name="cod" id="reprogram-cod">
+                <div class="form-grid">
+                    <label>Nueva Fecha:</label>
+                    <input type="date" name="fec" id="reprogram-date" required>
+                    <label>Horarios Disponibles:</label>
+                    <div id="reprogram-slots-container" class="slots-grid-small">
+                        <p style="font-size: 0.8rem; color: var(--text-muted);">Selecciona una fecha para ver horarios.</p>
+                    </div>
+                    <input type="hidden" name="hor" id="reprogram-time" required>
+                </div>
+                <button type="submit" class="primary-btn" style="margin-top: 20px; width: 100%;">Actualizar Cita</button>
             </form>
         </div>
     </div>

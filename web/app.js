@@ -203,14 +203,14 @@ function setupInteractions() {
     document.getElementById('btn-undo-snap').onclick = async () => {
         const res = await fetch('/api/undo/snapshot');
         const data = await res.json();
-        alert(data.message);
+        showNotification('Deshacer Inmueble', data.message, 'info');
         fetchData();
     };
 
     document.getElementById('btn-undo-admin').onclick = async () => {
         const res = await fetch('/api/undo/admin');
         const data = await res.json();
-        alert(data.message);
+        showNotification('Deshacer Acción', data.message, 'info');
         fetchData();
     };
 
@@ -574,7 +574,7 @@ function setupInteractions() {
                 // Si estamos en el dashboard, forzamos la vista de inmuebles para ver mejor
                 // O podemos dejar que el usuario siga en la vista actual. Lo dejaremos en la actual.
             } catch (err) {
-                alert('Error al aplicar filtros: ' + err.message);
+                showNotification('Error', 'Error al aplicar filtros: ' + err.message, 'error');
             }
         };
     }
@@ -583,32 +583,122 @@ function setupInteractions() {
     const btnVenta = document.getElementById('qf-venta');
     if (btnVenta) {
         btnVenta.onclick = async () => {
-            try {
-                const res = await fetch(`/api/inmuebles/filtrar?fin=Venta`);
-                const filtrados = await res.json();
-                renderProperties(filtrados, 'featured-props');
-                renderProperties(filtrados, 'all-props-grid');
-                switchView('dashboard'); // Volver al inicio
-                document.getElementById('featured-props').scrollIntoView({ behavior: 'smooth' });
-                // Resetear form para que refleje el estado
-                document.getElementById('filter-fin').value = 'Venta';
-            } catch (err) { alert('Error: ' + err.message); }
+            const isActive = btnVenta.classList.contains('active');
+            
+            // Limpiar estados previos
+            document.querySelectorAll('.qf-box').forEach(b => b.classList.remove('active'));
+            
+            if (isActive) {
+                // Si ya estaba activo, quitamos el filtro (volvemos a cargar todo)
+                fetchData();
+                document.getElementById('filter-fin').value = 'Todos';
+            } else {
+                // Si no estaba activo, aplicamos el filtro
+                btnVenta.classList.add('active');
+                try {
+                    const res = await fetch(`/api/inmuebles/filtrar?fin=Venta`);
+                    const filtrados = await res.json();
+                    renderProperties(filtrados, 'featured-props');
+                    renderProperties(filtrados, 'all-props-grid');
+                    switchView('dashboard');
+                    document.getElementById('featured-props').scrollIntoView({ behavior: 'smooth' });
+                    document.getElementById('filter-fin').value = 'Venta';
+                } catch (err) { showNotification('Error', err.message, 'error'); }
+            }
         };
     }
 
     const btnArriendo = document.getElementById('qf-arriendo');
     if (btnArriendo) {
         btnArriendo.onclick = async () => {
+            const isActive = btnArriendo.classList.contains('active');
+            
+            // Limpiar estados previos
+            document.querySelectorAll('.qf-box').forEach(b => b.classList.remove('active'));
+            
+            if (isActive) {
+                // Si ya estaba activo, quitamos el filtro
+                fetchData();
+                document.getElementById('filter-fin').value = 'Todos';
+            } else {
+                // Si no estaba activo, aplicamos el filtro
+                btnArriendo.classList.add('active');
+                try {
+                    const res = await fetch(`/api/inmuebles/filtrar?fin=Arriendo`);
+                    const filtrados = await res.json();
+                    renderProperties(filtrados, 'featured-props');
+                    renderProperties(filtrados, 'all-props-grid');
+                    switchView('dashboard');
+                    document.getElementById('featured-props').scrollIntoView({ behavior: 'smooth' });
+                    document.getElementById('filter-fin').value = 'Arriendo';
+                } catch (err) { showNotification('Error', err.message, 'error'); }
+            }
+        };
+    }
+
+    // LÓGICA DE REPROGRAMACIÓN DE VISITAS
+    const closeReprogram = document.getElementById('close-reprogram');
+    if (closeReprogram) {
+        closeReprogram.onclick = () => {
+            document.getElementById('modal-reprogram').style.display = 'none';
+        };
+    }
+
+    const formReprogram = document.getElementById('form-reprogram');
+    if (formReprogram) {
+        formReprogram.onsubmit = async (e) => {
+            e.preventDefault();
+            const fd = new FormData(e.target);
+            const params = new URLSearchParams(fd).toString();
             try {
-                const res = await fetch(`/api/inmuebles/filtrar?fin=Arriendo`);
-                const filtrados = await res.json();
-                renderProperties(filtrados, 'featured-props');
-                renderProperties(filtrados, 'all-props-grid');
-                switchView('dashboard'); // Volver al inicio
-                document.getElementById('featured-props').scrollIntoView({ behavior: 'smooth' });
-                // Resetear form para que refleje el estado
-                document.getElementById('filter-fin').value = 'Arriendo';
-            } catch (err) { alert('Error: ' + err.message); }
+                const res = await fetch(`/api/visitas/reprogramar?${params}`);
+                const data = await res.json();
+                if (data.status === 'ok') {
+                    showNotification('Éxito', 'Visita reprogramada correctamente', 'success');
+                    document.getElementById('modal-reprogram').style.display = 'none';
+                    renderClienteDashboard();
+                } else {
+                    showNotification('Error', data.message || 'No se pudo reprogramar la visita', 'error');
+                }
+            } catch (err) {
+                showNotification('Error', 'Error de conexión', 'error');
+            }
+        };
+    }
+
+    const reprogramDate = document.getElementById('reprogram-date');
+    if (reprogramDate) {
+        reprogramDate.onchange = async (e) => {
+            const date = e.target.value;
+            const propId = document.getElementById('reprogram-cod').value;
+            const container = document.getElementById('reprogram-slots-container');
+            
+            container.innerHTML = '<p style="font-size:0.8rem; color:var(--text-muted);">Cargando disponibilidad...</p>';
+            
+            try {
+                const res = await fetch(`/api/visitas/slots?cod=${propId}&fec=${date}`);
+                const slots = await res.json();
+                
+                container.innerHTML = '';
+                if (slots.length === 0) {
+                    container.innerHTML = '<p style="font-size:0.8rem; color:var(--text-muted);">No hay horarios disponibles.</p>';
+                    return;
+                }
+
+                slots.forEach(s => {
+                    const btn = document.createElement('div');
+                    btn.className = 'slot-btn';
+                    btn.textContent = s;
+                    btn.onclick = () => {
+                        document.querySelectorAll('#reprogram-slots-container .slot-btn').forEach(b => b.classList.remove('selected'));
+                        btn.classList.add('selected');
+                        document.getElementById('reprogram-time').value = s;
+                    };
+                    container.appendChild(btn);
+                });
+            } catch (err) {
+                container.innerHTML = '<p>Error al cargar horarios.</p>';
+            }
         };
     }
 }
@@ -852,7 +942,7 @@ async function setupSimulacion() {
                         <p style="font-size: 0.85rem; color: #166534;">* Basado en el motor de tendencias históricas y volumen de visitas actual.</p>
                     </div>
                 `;
-            } catch(e) { alert("Error en simulación"); }
+            } catch(e) { showNotification('Error', 'No se pudo completar la simulación', 'error'); }
         };
     }
 }
@@ -977,7 +1067,7 @@ function renderProperties(props, containerId) {
 
 async function toggleFavorite(codigo) {
     if (!currentClientId) {
-        alert("Regístrate para guardar favoritos");
+        showNotification('Acción Requerida', 'Regístrate para guardar tus inmuebles favoritos', 'info');
         document.getElementById('modal-register').style.display = 'flex';
         return;
     }
@@ -1007,11 +1097,11 @@ async function toggleFavorite(codigo) {
         } else {
             const errorText = await res.text();
             console.error("Error en respuesta de favoritos:", res.status, errorText);
-            alert("No se pudo actualizar favoritos en el servidor.");
+            showNotification('Error', 'No se pudo actualizar favoritos en el servidor.', 'error');
         }
     } catch (e) { 
         console.error("Error toggling favorite", e); 
-        alert("Error de conexión al actualizar favoritos.");
+        showNotification('Error de Conexión', 'No se pudo actualizar favoritos.', 'error');
     }
 }
 
@@ -1051,8 +1141,16 @@ async function renderClienteDashboard() {
                             <p>📅 ${v.fecha} | ⏰ ${v.hora}</p>
                             <p style="font-size:0.75rem;">Asesor: ${v.asesor ? v.asesor.nombre : 'Por asignar'}</p>
                         </div>
-                        <div class="status" style="background:${v.estado === 'Pendiente' ? '#fef3c7' : '#dcfce7'}; color:${v.estado === 'Pendiente' ? '#92400e' : '#166534'};">
-                            ${v.estado}
+                        <div class="actions-status">
+                            <div class="status" style="background:${v.estado === 'Pendiente' ? '#fef3c7' : '#dcfce7'}; color:${v.estado === 'Pendiente' ? '#92400e' : '#166534'};">
+                                ${v.estado}
+                            </div>
+                            ${v.estado === 'Pendiente' ? `
+                                <div class="visit-actions" style="margin-top:10px; display:flex; gap:5px;">
+                                    <button class="secondary-btn" style="padding:4px 8px; font-size:0.7rem;" onclick="openReprogramModal('${v.inmueble.codigo}')">Reagendar</button>
+                                    <button class="secondary-btn" style="padding:4px 8px; font-size:0.7rem; border-color:#ef4444; color:#ef4444;" onclick="cancelVisit('${v.inmueble.codigo}')">Cancelar</button>
+                                </div>
+                            ` : ''}
                         </div>
                     `;
                     visitList.appendChild(card);
@@ -1556,4 +1654,29 @@ window.openOperacionModal = (codigo, direccion, precio) => {
     globalClients.forEach(c => {
         sel.innerHTML += `<option value="${c.id}">${c.nombre} (${c.id})</option>`;
     });
+};
+// Funciones globales de gestión de visitas
+window.cancelVisit = async (codInmueble) => {
+    if (confirm('¿Estás seguro de que deseas cancelar esta visita?')) {
+        try {
+            const res = await fetch(`/api/visitas/cancelar?cli=${currentClientId}&cod=${codInmueble}`);
+            const data = await res.json();
+            if (data.status === 'ok') {
+                showNotification('Visita Cancelada', 'La visita ha sido cancelada satisfactoriamente.', 'success');
+                renderClienteDashboard();
+            } else {
+                showNotification('Error', 'No se pudo cancelar la visita.', 'error');
+            }
+        } catch (err) {
+            showNotification('Error', 'Error de conexión con el servidor.', 'error');
+        }
+    }
+};
+
+window.openReprogramModal = (codInmueble) => {
+    document.getElementById('modal-reprogram').style.display = 'flex';
+    document.getElementById('reprogram-cli').value = currentClientId;
+    document.getElementById('reprogram-cod').value = codInmueble;
+    document.getElementById('form-reprogram').reset();
+    document.getElementById('reprogram-slots-container').innerHTML = '<p style="font-size: 0.8rem; color: var(--text-muted);">Selecciona una fecha para ver horarios.</p>';
 };

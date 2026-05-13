@@ -566,7 +566,7 @@ public class PropTechSystem {
         return coincidencias;
     }
 
-    public CustomList<Inmueble> filtrarInmueblesAvanzado(String tipo, String finalidad, int minHabitaciones, int minBanos, double precioMax) {
+    public CustomList<Inmueble> filtrarInmueblesAvanzado(String tipo, String finalidad, int minHabitaciones, int minBanos, double precioMin, double precioMax) {
         CustomList<Inmueble> coincidencias = new CustomList<>();
         CustomList<Inmueble> todos = arbolInmueblesPrecio.toList();
         
@@ -583,13 +583,14 @@ public class PropTechSystem {
             boolean cumpleHabitaciones = inm.getHabitaciones() >= minHabitaciones;
             boolean cumpleBanos = inm.getBanos() >= minBanos;
             
-            // 3. Precio
-            boolean cumplePrecio = precioMax <= 0 || inm.getPrecio() <= precioMax;
+            // 3. Rango de Precio
+            boolean cumplePrecioMin = precioMin <= 0 || inm.getPrecio() >= precioMin;
+            boolean cumplePrecioMax = precioMax <= 0 || inm.getPrecio() <= precioMax;
             
             // 4. Disponibilidad (por defecto solo mostramos disponibles en búsquedas generales de clientes)
             boolean estaDisponible = "Disponible".equalsIgnoreCase(inm.getDisponibilidad());
 
-            if (cumpleTipo && cumpleFinalidad && cumpleHabitaciones && cumpleBanos && cumplePrecio && estaDisponible) {
+            if (cumpleTipo && cumpleFinalidad && cumpleHabitaciones && cumpleBanos && cumplePrecioMin && cumplePrecioMax && estaDisponible) {
                 coincidencias.add(inm);
             }
         }

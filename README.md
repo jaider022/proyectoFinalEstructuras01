@@ -29,7 +29,18 @@ El núcleo lógico del sistema se apoya en las siguientes estructuras de código
 * **CustomHashTable:** Tablas Hash para búsquedas ultra-rápidas.
 * **Otras:** `CustomList`, `CustomQueue`, `CustomStack`, y `CustomPriorityQueue`.
 
+## 🔑 Credenciales de Prueba
+Para evaluar las diferentes funcionalidades del sistema, puede utilizar las siguientes credenciales predefinidas:
+
+| Rol | Usuario (ID) | Contraseña |
+| :--- | :--- | :--- |
+| **Administrador** | `admin` | `admin123` |
+| **Asesor** | `A-001` | *No requiere* |
+| **Cliente** | `C-001` | *No requiere* |
+
+*Nota: Al entrar como Administrador, se habilitan todas las opciones de gestión, incluyendo Auditoría y Simulación de Demanda.*
+
 ## 💻 Instrucciones de Ejecución
 1. Compilar los archivos `.java` ubicados en la carpeta `src/`.
-2. Ejecutar la clase principal encargada de levantar el servidor web (usualmente `PropTechServer.java` o `MainWeb.java`).
-3. Una vez el servidor esté corriendo, abrir el archivo `web/index.html` en tu navegador web de preferencia para usar el sistema.
+2. Ejecutar la clase principal `MainWeb.java` (Levanta el servidor en `localhost:8080`).
+3. Abrir `web/index.html` en el navegador.

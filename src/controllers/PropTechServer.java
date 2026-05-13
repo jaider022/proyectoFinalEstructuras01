@@ -202,9 +202,10 @@ public class PropTechServer {
             String finalidad = p.get("fin");
             int hab = p.get("hab") != null && !p.get("hab").isEmpty() ? Integer.parseInt(p.get("hab")) : 0;
             int ban = p.get("ban") != null && !p.get("ban").isEmpty() ? Integer.parseInt(p.get("ban")) : 0;
+            double preMin = p.get("preMin") != null && !p.get("preMin").isEmpty() ? Double.parseDouble(p.get("preMin")) : 0;
             double preMax = p.get("preMax") != null && !p.get("preMax").isEmpty() ? Double.parseDouble(p.get("preMax")) : 0;
 
-            CustomList<Inmueble> filtrados = sistema.filtrarInmueblesAvanzado(tipo, finalidad, hab, ban, preMax);
+            CustomList<Inmueble> filtrados = sistema.filtrarInmueblesAvanzado(tipo, finalidad, hab, ban, preMin, preMax);
             String response = JsonUtil.listToJson(filtrados, JsonUtil::inmuebleToJson);
             
             exchange.getResponseHeaders().set("Content-Type", "application/json; charset=UTF-8");

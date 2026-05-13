@@ -55,7 +55,7 @@ El sistema incorporará un motor inteligente de **detección de comportamiento i
 ## 4. Entregables Esperados del Proyecto
 
 Para la entrega exitosa definitiva se requerirá compilar:
-- [ ] Código fuente completo documentado.
-- [ ] Diagrama de clases (Con base al numeral 1).
-- [ ] Documentación: Este análisis descriptivo que relaciona problema y estructuras usadas.
-- [ ] Script o interfaz que simule datos y corra ejemplos de ejecución de las operaciones analíticas mencionadas.
+- [x] Código fuente completo documentado.
+- [x] Diagrama de clases (Con base al numeral 1).
+- [x] Documentación: Este análisis descriptivo que relaciona problema y estructuras usadas.
+- [x] Script o interfaz que simule datos y corra ejemplos de ejecución de las operaciones analíticas mencionadas.

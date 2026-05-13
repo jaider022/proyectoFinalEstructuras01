@@ -221,6 +221,13 @@ header {
     transform: translateY(-2px);
 }
 
+.qf-venta.active {
+    background: #4338ca;
+    color: white;
+    border-color: #312e81;
+    box-shadow: 0 4px 12px rgba(67, 56, 202, 0.3);
+}
+
 .qf-arriendo {
     background: #dcfce7;
     color: #166534;
@@ -230,6 +237,13 @@ header {
     background: #bbf7d0;
     border-color: #22c55e;
     transform: translateY(-2px);
+}
+
+.qf-arriendo.active {
+    background: #166534;
+    color: white;
+    border-color: #14532d;
+    box-shadow: 0 4px 12px rgba(22, 101, 52, 0.3);
 }
 
 /* Property Grid */
