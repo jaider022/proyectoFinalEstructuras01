@@ -58,8 +58,16 @@ public class MainWeb {
 
             Cliente c1 = new Cliente("C-01", "Jaider Admin", "jaider@proptech.com", "311", "Comprador", 1000000.0, "Norte",
                     "Apto", 0, "Activo");
-            Cliente c2 = new Cliente("C-02", "Carlos Inversor", "carlos@mail.com", "322", "Comprador", 500000.0, "Norte",
-                    "Apto", 2, "Activo");
+            Cliente c2 = new Cliente("C-02", "Ana Torres", "ana@correo.com", "320", "Inversor", 5000000.0, "Norte",
+                    "Apto", 0, "Activo");
+            sistema.registrarCliente(c1);
+            sistema.registrarCliente(c2);
+
+            // AGENDAR VISITAS DE PRUEBA PARA QUE SE VEAN LOS CAMBIOS EN EL PANEL
+            sistema.agendarVisita("C-01", "INM-01", "A-001", "2026-06-15", "10:00 AM", 0);
+            sistema.agendarVisita("C-02", "INM-05", "A-001", "2026-06-16", "02:00 PM", 1);
+            sistema.agendarVisita("C-01", "INM-02", "A-002", "2026-06-17", "11:30 AM", 0);
+
             Cliente c3 = new Cliente("C-03", "Ana Arrendataria", "ana@mail.com", "333", "Arrendatario", 6000.0, "Chapinero",
                     "Apto", 1, "Activo");
             Cliente c4 = new Cliente("C-04", "Luis Negocios", "luis@mail.com", "344", "Comprador", 2000000.0, "Colina",

@@ -90,8 +90,6 @@
                     <button id="btn-advanced-filters" class="secondary-btn" style="white-space: nowrap;">⚙️ Filtros Avanzados</button>
                 </div>
                 <div class="user-actions">
-                    <button id="btn-undo-snap" class="secondary-btn admin-only" style="display:none" title="Deshacer cambio en inmueble">↩️ Inm</button>
-                    <button id="btn-undo-admin" class="secondary-btn admin-only" style="display:none" title="Deshacer acción admin">↩️ Admin</button>
                     <button id="btn-add-prop" class="primary-btn admin-only" style="display:none">+ Nuevo Inmueble</button>
                     <div class="user-profile" id="header-user-controls" style="display: flex; gap: 10px; align-items: center;">
                         <button id="btn-header-register" class="secondary-btn guest-only">Registrarse</button>
@@ -407,6 +405,12 @@
             <form id="form-schedule">
                 <input type="hidden" name="cod" id="schedule-cod">
                 <div class="form-grid">
+                    <div class="input-group admin-asesor-only" id="schedule-client-group" style="display:none; grid-column: span 2; margin-bottom: 10px;">
+                        <label>Seleccionar Cliente:</label>
+                        <select name="cli_manual" id="schedule-client-select">
+                            <option value="" disabled selected>Selecciona un cliente...</option>
+                        </select>
+                    </div>
                     <label>Fecha:</label>
                     <input type="date" name="fec" id="schedule-date" required>
                     <label>Horarios Disponibles:</label>
@@ -417,6 +421,16 @@
                 </div>
                 <button type="submit" class="primary-btn" style="margin-top: 20px; width: 100%;">Confirmar Cita</button>
             </form>
+        </div>
+    </div>
+
+    <!-- MODAL CONFIRMACION VISITA -->
+    <div id="modal-visit-confirmed" class="overlay" style="display:none; z-index: 9999;">
+        <div class="modal" style="max-width: 400px; text-align: center; padding: 40px 20px;">
+            <div style="font-size: 4rem; margin-bottom: 15px;">✅</div>
+            <h2 id="mvc-title" style="color: #166534; margin-bottom: 10px;">¡Visita Confirmada!</h2>
+            <p id="mvc-message" style="color: var(--text-muted); margin-bottom: 25px; line-height: 1.5;"></p>
+            <button class="primary-btn" onclick="document.getElementById('modal-visit-confirmed').style.display='none'" style="width: 100%;">Entendido</button>
         </div>
     </div>
 
@@ -482,11 +496,12 @@
     <div id="modal-add-asesor" class="overlay" style="display:none">
         <div class="modal">
             <span class="close-btn" id="close-add-asesor">&times;</span>
-            <h2>Registrar Nuevo Asesor</h2>
+            <h2 id="modal-asesor-title">Registrar Nuevo Asesor</h2>
             <form id="form-add-asesor" style="margin-top: 20px;">
+                <input type="hidden" name="isUpdate" id="asesor-is-update" value="false">
                 <div class="input-group">
                     <label>Identificación (ID)</label>
-                    <input type="text" name="id" placeholder="Ej: A-004" required>
+                    <input type="text" name="id" id="asesor-form-id" placeholder="Ej: A-004" required>
                 </div>
                 <div class="input-group">
                     <label>Nombre Completo</label>

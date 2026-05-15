@@ -7,45 +7,57 @@ let globalClients = [];
 let lightboxPhotos = [];
 let lightboxCurrentIndex = 0;
 
-document.addEventListener('DOMContentLoaded', () => {
-    fetchData();
+document.addEventListener('DOMContentLoaded', async () => {
     setupNavigation();
     setupInteractions();
+    await loadSession(); // Intentar restaurar sesión
+    if (currentRole === 'guest') {
+        fetchData();
+    }
 });
 
-/**
- * Muestra una notificación elegante (Toast) en pantalla.
- * @param {string} title Título del mensaje
- * @param {string} msg Contenido del mensaje
- * @param {string} type 'success', 'error', 'info'
- */
-function showNotification(title, msg, type = 'info') {
-    const container = document.getElementById('toast-container');
-    if (!container) return;
+function saveSession() {
+    localStorage.setItem('proptech_role', currentRole);
+    localStorage.setItem('proptech_clientId', currentClientId);
+    localStorage.setItem('proptech_isRegistered', isRegistered);
+}
 
-    const toast = document.createElement('div');
-    toast.className = `toast ${type}`;
-    
-    let icon = 'ℹ️';
-    if (type === 'success') icon = '✅';
-    if (type === 'error') icon = '❌';
+function clearSession() {
+    localStorage.removeItem('proptech_role');
+    localStorage.removeItem('proptech_clientId');
+    localStorage.removeItem('proptech_isRegistered');
+}
 
-    toast.innerHTML = `
-        <div class="toast-icon">${icon}</div>
-        <div class="toast-content">
-            <strong class="toast-title">${title}</strong>
-            <div class="toast-msg">${msg}</div>
-        </div>
-    `;
+async function loadSession() {
+    const savedRole = localStorage.getItem('proptech_role');
+    const savedClientId = localStorage.getItem('proptech_clientId');
+    const savedIsRegistered = localStorage.getItem('proptech_isRegistered');
 
-    container.appendChild(toast);
+    if (savedRole && savedRole !== 'guest') {
+        currentRole = savedRole;
+        currentClientId = (savedClientId === 'null' || !savedClientId) ? null : savedClientId;
+        isRegistered = (savedIsRegistered === 'true');
 
-    // Auto-eliminar del DOM después de que termine la animación
-    setTimeout(() => {
-        if (toast.parentNode) {
-            container.removeChild(toast);
+        console.log("Restaurando sesión:", currentRole, currentClientId);
+
+        // Actualizar UI básica para evitar parpadeo
+        const lv = document.getElementById('landing-view');
+        const ac = document.getElementById('app-container');
+        if (lv) lv.style.display = 'none';
+        if (ac) ac.style.display = 'flex';
+        
+        await fetchData();
+        applyRoleRestrictions();
+        
+        // Redirigir a la vista principal según rol
+        if (currentRole === 'admin') {
+            switchView('dashboard');
+        } else if (currentRole === 'asesor') {
+            switchView('asesor-dashboard');
+        } else if (currentRole === 'cliente') {
+            switchView('dashboard');
         }
-    }, 5000);
+    }
 }
 
 
@@ -96,6 +108,7 @@ function setupInteractions() {
             currentRole = 'guest';
             currentClientId = null;
             isRegistered = false;
+            clearSession(); // Limpiar persistencia
             fetchData();
             switchView('dashboard');
             document.getElementById('landing-view').style.display = 'flex';
@@ -139,6 +152,8 @@ function setupInteractions() {
                     currentRole = data.role;
                     currentClientId = (data.role === 'cliente' || data.role === 'asesor') ? data.id : null;
                     isRegistered = (data.role === 'cliente');
+                    
+                    saveSession(); // Guardar para persistencia
                     
                     document.getElementById('modal-login').style.display = 'none';
                     
@@ -190,29 +205,22 @@ function setupInteractions() {
             
             isRegistered = true;
             currentRole = 'cliente'; // Promocionar a cliente automáticamente
+            saveSession(); // Guardar sesión registrada
+            
             document.getElementById('modal-register').style.display = 'none';
             await fetchData();
+            
+            // Mostrar App
+            document.getElementById('landing-view').style.display = 'none';
+            document.getElementById('app-container').style.display = 'flex';
+            applyRoleRestrictions();
+            
             switchView('dashboard');
         } catch (err) {
             console.error("Error en registro:", err);
             alert("No se pudo completar el registro: " + err.message);
         }
     });
-
-    // Botones UNDO
-    document.getElementById('btn-undo-snap').onclick = async () => {
-        const res = await fetch('/api/undo/snapshot');
-        const data = await res.json();
-        showNotification('Deshacer Inmueble', data.message, 'info');
-        fetchData();
-    };
-
-    document.getElementById('btn-undo-admin').onclick = async () => {
-        const res = await fetch('/api/undo/admin');
-        const data = await res.json();
-        showNotification('Deshacer Acción', data.message, 'info');
-        fetchData();
-    };
 
     // Función auxiliar para leer archivos como Base64
     const fileToBase64 = (file) => new Promise((resolve, reject) => {
@@ -353,6 +361,20 @@ function setupInteractions() {
             document.getElementById('modal-register').style.display = 'flex';
             return;
         }
+
+        // Mostrar selector de cliente si es admin/asesor
+        const clientGroup = document.getElementById('schedule-client-group');
+        if (currentRole === 'admin' || currentRole === 'asesor') {
+            clientGroup.style.display = 'block';
+            const sel = document.getElementById('schedule-client-select');
+            sel.innerHTML = '<option value="" disabled selected>Selecciona un cliente...</option>';
+            globalClients.forEach(c => {
+                sel.innerHTML += `<option value="${c.id}">${c.nombre} (${c.id})</option>`;
+            });
+        } else {
+            clientGroup.style.display = 'none';
+        }
+
         document.getElementById('modal-schedule').style.display = 'flex';
     };
 
@@ -363,16 +385,27 @@ function setupInteractions() {
     document.getElementById('form-schedule').onsubmit = async (e) => {
         e.preventDefault();
         const fd = new FormData(e.target);
+        const params = new URLSearchParams(fd);
         
-        if (!fd.get('hor')) {
-            alert('Por favor selecciona un horario.');
+        // Determinar el ID del cliente
+        let clienteId = currentClientId;
+        
+        // Si es admin/asesor y seleccionó uno manual
+        const cliManual = fd.get('cli_manual');
+        if ((currentRole === 'admin' || currentRole === 'asesor') && cliManual) {
+            clienteId = cliManual;
+        }
+
+        if (!clienteId && currentRole === 'guest') {
+            clienteId = document.querySelector('#form-register input[name="id"]').value || "C-DEMO";
+        }
+
+        if (!clienteId) {
+            alert('No se pudo identificar al cliente para la visita.');
             return;
         }
 
-        const params = new URLSearchParams(fd);
-        
-        // Agregar ID del cliente actual
-        const clienteId = currentClientId || document.querySelector('#form-register input[name="id"]').value || "C-DEMO";
+        params.delete('cli_manual'); // Limpiar antes de enviar
         params.append('cli', clienteId);
 
         try {
@@ -384,15 +417,27 @@ function setupInteractions() {
                 const property = globalProperties.find(p => p.codigo === propCode);
                 const asesorNombre = (property && property.asesor && property.asesor.nombre !== 'null') ? property.asesor.nombre : 'nuestro equipo de ventas';
                 
-                showNotification('Cita Agendada', `Serás atendido por: ${asesorNombre}. ¡Te esperamos!`, 'success');
+                let titleMsg = '¡Cita Agendada!';
+                if (currentRole === 'asesor' || currentRole === 'admin') {
+                    titleMsg = '¡Visita Confirmada!';
+                }
+                
+                const fechaStr = fd.get('fec');
+                const horaStr = fd.get('hor');
+                
+                document.getElementById('mvc-title').textContent = titleMsg;
+                document.getElementById('mvc-message').innerHTML = `Se ha registrado la visita exitosamente.<br><br><strong>Cliente:</strong> ${clienteId}<br><strong>Fecha:</strong> ${fechaStr}<br><strong>Hora:</strong> ${horaStr}<br><br><span style="font-size:0.8rem; color:var(--text-muted);">(Atendido por: ${asesorNombre})</span>`;
+                
+                document.getElementById('modal-visit-confirmed').style.display = 'flex';
                 document.getElementById('modal-schedule').style.display = 'none';
+                document.getElementById('modal-details').style.display = 'none';
                 e.target.reset();
                 document.getElementById('slots-container').innerHTML = '<p style="font-size: 0.8rem; color: var(--text-muted);">Selecciona una fecha para ver horarios.</p>';
                 
-                // Actualizar panel de cliente si está activo
-                if (currentRole === 'cliente') {
-                    fetchClienteData();
-                }
+                // Actualizar paneles según corresponda
+                if (currentRole === 'cliente') renderClienteDashboard();
+                if (currentRole === 'asesor') fetchData(); // Esto recargará el panel del asesor
+                if (currentRole === 'admin') fetchData();
             } else {
                 alert('No se pudo agendar: ' + (result.message || 'Error desconocido'));
             }
@@ -407,6 +452,11 @@ function setupInteractions() {
     if (btnAddAsesor) {
         btnAddAsesor.onclick = () => {
             document.getElementById('modal-add-asesor').style.display = 'flex';
+            document.getElementById('modal-asesor-title').textContent = 'Registrar Nuevo Asesor';
+            document.getElementById('asesor-is-update').value = 'false';
+            document.getElementById('asesor-form-id').readOnly = false;
+            document.getElementById('form-add-asesor').reset();
+            document.querySelector('#form-add-asesor button[type="submit"]').textContent = 'Registrar Asesor';
         };
     }
     
@@ -656,7 +706,7 @@ function setupInteractions() {
                 if (data.status === 'ok') {
                     showNotification('Éxito', 'Visita reprogramada correctamente', 'success');
                     document.getElementById('modal-reprogram').style.display = 'none';
-                    renderClienteDashboard();
+                    fetchData(); // Recarga toda la información, incluyendo el panel del asesor
                 } else {
                     showNotification('Error', data.message || 'No se pudo reprogramar la visita', 'error');
                 }
@@ -741,7 +791,10 @@ function applyRoleRestrictions() {
         console.log("Admin mode active");
     } else if (currentRole === 'asesor') {
         adminElements.forEach(el => el.style.display = 'none');
-        asesorElements.forEach(el => el.style.display = '');
+        asesorElements.forEach(el => {
+            if (el.tagName === 'LI') el.style.display = 'block';
+            else el.style.display = 'inline-block';
+        });
         commercialElements.forEach(el => el.style.display = 'inline-block');
         guestOnlyElements.forEach(el => el.style.display = 'none');
         loggedInElements.forEach(el => el.style.display = 'block');
@@ -883,11 +936,29 @@ async function fetchData() {
         if (currentRole === 'admin') {
             fetchAuditoria();
             fetchAsesores();
+        } else if (currentRole === 'asesor') {
+            fetchAsesorData();
         }
         
         applyRoleRestrictions();
     } catch (err) {
         console.error('Error in fetchData:', err);
+    }
+}
+
+async function fetchAsesorData() {
+    if (currentRole !== 'asesor' || !currentClientId) return;
+    try {
+        const res = await fetch('/api/asesores');
+        if (res.ok) {
+            const asesores = await res.json();
+            const miAsesor = asesores.find(a => a.id === currentClientId);
+            if (miAsesor) {
+                renderAsesorDashboard(miAsesor);
+            }
+        }
+    } catch (e) {
+        console.error("Error fetching Asesor data:", e);
     }
 }
 
@@ -1444,11 +1515,13 @@ function renderClients(clients) {
     container.className = ""; // Quitamos stats-grid para que la tabla ocupe todo
 }
 
+let lastLoadedAsesores = []; // Para edición rápida
+
 async function fetchAsesores() {
     try {
         const res = await fetch('/api/asesores');
-        const asesores = await res.json();
-        renderAsesores(asesores);
+        lastLoadedAsesores = await res.json();
+        renderAsesores(lastLoadedAsesores);
     } catch (err) {
         console.error('Error cargando asesores:', err);
     }
@@ -1473,6 +1546,16 @@ function renderAsesores(asesores) {
             inmueblesTags = a.inmuebles.map(codigo => `<span class="tag">${codigo}</span>`).join('');
         } else {
             inmueblesTags = '<span style="color:#999; font-style:italic;">Sin inmuebles asignados</span>';
+        }
+
+        let actionsHtml = '';
+        if (currentRole === 'admin') {
+            actionsHtml = `
+                <div class="asesor-actions" style="margin-top:15px; display:flex; gap:10px; border-top:1px solid #eee; padding-top:15px;">
+                    <button class="secondary-btn" style="flex:1; font-size:0.8rem; padding:8px;" onclick="editAsesor('${a.id}')">✏️ Editar</button>
+                    <button class="secondary-btn" style="flex:1; font-size:0.8rem; padding:8px; border-color:#ef4444; color:#ef4444;" onclick="deleteAsesor('${a.id}')">🗑️ Borrar</button>
+                </div>
+            `;
         }
 
         card.innerHTML = `
@@ -1502,10 +1585,65 @@ function renderAsesores(asesores) {
                 <strong>Inmuebles a Cargo:</strong><br>
                 <div style="margin-top:5px;">${inmueblesTags}</div>
             </div>
+            ${a.visitas && a.visitas.length > 0 ? `
+                <div class="asesor-visits-mini" style="margin-top:10px; font-size:0.8rem; background:rgba(255,255,255,0.5); padding:10px; border-radius:8px;">
+                    <strong>Próximas Visitas:</strong>
+                    <div style="max-height:100px; overflow-y:auto; margin-top:5px;">
+                        ${a.visitas.map(v => `
+                            <div style="display:flex; justify-content:space-between; margin-bottom:5px; border-bottom:1px solid rgba(0,0,0,0.05); padding-bottom:5px;">
+                                <div>
+                                    <span>${v.fecha} | ${v.hora}</span><br>
+                                    <span style="font-size:0.7rem; color:${v.estado.toLowerCase() === 'confirmada' ? '#166534' : (v.estado.toLowerCase() === 'cancelada' ? '#991b1b' : '#92400e')}">${v.estado.toUpperCase()}</span>
+                                </div>
+                                <div style="display:flex; gap:5px; align-items:center;">
+                                    <button onclick="openReprogramModal('${v.inmueble.codigo}', '${v.cliente ? v.cliente.id : ''}')" style="background:none; border:none; cursor:pointer;" title="Reprogramar">✏️</button>
+                                    <button onclick="cancelVisit('${v.inmueble.codigo}', '${v.cliente ? v.cliente.id : ''}')" style="background:none; border:none; cursor:pointer; color:#ef4444;" title="Cancelar">❌</button>
+                                </div>
+                            </div>
+                        `).join('')}
+                    </div>
+                </div>
+            ` : ''}
+            ${actionsHtml}
         `;
         container.appendChild(card);
     });
 }
+
+window.deleteAsesor = async (id) => {
+    if (confirm(`¿Estás seguro de que deseas eliminar al asesor con ID: ${id}?`)) {
+        try {
+            const res = await fetch(`/api/asesores/delete?id=${id}`);
+            const data = await res.json();
+            if (data.status === 'ok') {
+                showNotification('Asesor Eliminado', 'El asesor ha sido removido del sistema.', 'success');
+                fetchAsesores();
+            } else {
+                showNotification('Error', data.message || 'No se pudo eliminar el asesor', 'error');
+            }
+        } catch (err) {
+            showNotification('Error de Conexión', 'No se pudo conectar con el servidor.', 'error');
+        }
+    }
+};
+
+window.editAsesor = (id) => {
+    const a = lastLoadedAsesores.find(x => x.id === id);
+    if (!a) return;
+
+    document.getElementById('modal-add-asesor').style.display = 'flex';
+    document.getElementById('modal-asesor-title').textContent = 'Editar Asesor';
+    document.getElementById('asesor-is-update').value = 'true';
+    
+    const f = document.getElementById('form-add-asesor');
+    f.elements['id'].value = a.id;
+    f.elements['id'].readOnly = true;
+    f.elements['nombre'].value = a.nombre;
+    f.elements['contacto'].value = a.contacto;
+    f.elements['zona'].value = a.zona;
+    
+    f.querySelector('button[type="submit"]').textContent = 'Guardar Cambios';
+};
 
 function renderAsesorDashboard(asesor) {
     // Info personal
@@ -1561,16 +1699,38 @@ function renderAsesorDashboard(asesor) {
         propsContainer.innerHTML = '<p style="color:var(--text-muted)">No tienes inmuebles asignados.</p>';
     }
 
-    // Visitas agendadas (Por ahora mostraremos solo el contador o una nota si no tenemos la info completa)
+    // Visitas agendadas
     const visitsContainer = document.getElementById('asesor-my-visits');
-    visitsContainer.innerHTML = `
-        <div style="padding: 10px; border: 1px solid #e2e8f0; border-radius: 8px; background: #f0fdf4; color:#166534; text-align:center;">
-            <strong>${asesor.visitasCount || 0}</strong> visitas pendientes en cola.
-        </div>
-        <p style="font-size:0.85rem; color:var(--text-muted); margin-top:10px;">
-            * El sistema maneja las visitas mediante una cola de prioridad basada en el orden de llegada.
-        </p>
-    `;
+    visitsContainer.innerHTML = '';
+    
+    if (asesor.visitas && asesor.visitas.length > 0) {
+        asesor.visitas.forEach(v => {
+            const card = document.createElement('div');
+            card.className = 'visit-card-compact';
+            card.style.background = 'white';
+            card.innerHTML = `
+                <div class="info">
+                    <h4>${v.inmueble ? v.inmueble.direccion : 'Inmueble'}</h4>
+                    <p>📍 ${v.inmueble ? v.inmueble.ciudad : ''} | 📅 ${v.fecha} | ⏰ ${v.hora}</p>
+                    <p style="font-size:0.8rem; color:var(--accent-color);">Cliente: ${v.cliente ? v.cliente.nombre : 'Anónimo'}</p>
+                </div>
+                <div class="actions-status" style="display:flex; flex-direction:column; gap:5px; align-items:flex-end;">
+                    <div style="font-size:0.75rem; font-weight:bold; padding:3px 8px; border-radius:4px; background:${v.estado.toLowerCase() === 'confirmada' ? '#dcfce7' : (v.estado.toLowerCase() === 'cancelada' ? '#fee2e2' : '#fef3c7')}; color:${v.estado.toLowerCase() === 'confirmada' ? '#166534' : (v.estado.toLowerCase() === 'cancelada' ? '#991b1b' : '#92400e')}; margin-bottom:5px;">
+                        ${v.estado.toUpperCase()}
+                    </div>
+                    <button class="secondary-btn" style="padding:4px 8px; font-size:0.75rem;" onclick="openReprogramModal('${v.inmueble.codigo}', '${v.cliente ? v.cliente.id : ''}')">Reagendar</button>
+                    <button class="secondary-btn" style="padding:4px 8px; font-size:0.75rem; border-color:#ef4444; color:#ef4444;" onclick="cancelVisit('${v.inmueble.codigo}', '${v.cliente ? v.cliente.id : ''}')">Cancelar</button>
+                </div>
+            `;
+            visitsContainer.appendChild(card);
+        });
+    } else {
+        visitsContainer.innerHTML = `
+            <div style="padding: 20px; border: 1px dashed #cbd5e1; border-radius: 8px; text-align:center; color:var(--text-muted);">
+                No tienes visitas pendientes en este momento.
+            </div>
+        `;
+    }
 }
 
 async function loadAnalitica() {
@@ -1656,14 +1816,43 @@ window.openOperacionModal = (codigo, direccion, precio) => {
     });
 };
 // Funciones globales de gestión de visitas
-window.cancelVisit = async (codInmueble) => {
-    if (confirm('¿Estás seguro de que deseas cancelar esta visita?')) {
+window.confirmarVisita = async (codInmueble, manualClientId = null) => {
+    const cliId = manualClientId || currentClientId;
+    if (!cliId) {
+        showNotification('Error', 'No se pudo identificar al cliente.', 'error');
+        return;
+    }
+
+    if (confirm(`¿Confirmar la visita del cliente ${cliId}?`)) {
         try {
-            const res = await fetch(`/api/visitas/cancelar?cli=${currentClientId}&cod=${codInmueble}`);
+            const res = await fetch(`/api/visitas/confirmar?cli=${cliId}&cod=${codInmueble}`);
+            const data = await res.json();
+            if (data.status === 'ok') {
+                showNotification('Visita Confirmada', 'La visita ha sido confirmada satisfactoriamente.', 'success');
+                fetchData(); // Recargar todo
+            } else {
+                showNotification('Error', 'No se pudo confirmar la visita.', 'error');
+            }
+        } catch (err) {
+            showNotification('Error', 'Error de conexión con el servidor.', 'error');
+        }
+    }
+};
+
+window.cancelVisit = async (codInmueble, manualClientId = null) => {
+    const cliId = manualClientId || currentClientId;
+    if (!cliId) {
+        showNotification('Error', 'No se pudo identificar al cliente.', 'error');
+        return;
+    }
+
+    if (confirm(`¿Estás seguro de que deseas cancelar la visita del cliente ${cliId}?`)) {
+        try {
+            const res = await fetch(`/api/visitas/cancelar?cli=${cliId}&cod=${codInmueble}`);
             const data = await res.json();
             if (data.status === 'ok') {
                 showNotification('Visita Cancelada', 'La visita ha sido cancelada satisfactoriamente.', 'success');
-                renderClienteDashboard();
+                fetchData(); // Recargar todo
             } else {
                 showNotification('Error', 'No se pudo cancelar la visita.', 'error');
             }
@@ -1673,9 +1862,15 @@ window.cancelVisit = async (codInmueble) => {
     }
 };
 
-window.openReprogramModal = (codInmueble) => {
+window.openReprogramModal = (codInmueble, manualClientId = null) => {
+    const cliId = manualClientId || currentClientId;
+    if (!cliId) {
+        showNotification('Error', 'No se pudo identificar al cliente.', 'error');
+        return;
+    }
+
     document.getElementById('modal-reprogram').style.display = 'flex';
-    document.getElementById('reprogram-cli').value = currentClientId;
+    document.getElementById('reprogram-cli').value = cliId;
     document.getElementById('reprogram-cod').value = codInmueble;
     document.getElementById('form-reprogram').reset();
     document.getElementById('reprogram-slots-container').innerHTML = '<p style="font-size: 0.8rem; color: var(--text-muted);">Selecciona una fecha para ver horarios.</p>';

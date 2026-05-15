@@ -119,7 +119,17 @@ public class PropTechSystem {
         tablaAsesores.put(asesor.getIdentificacion(), asesor);
         arbolAsesoresCierres.insert(asesor.getCierresRealizados(), asesor);
         arbolAsesoresCarga.insert(asesor.getVisitasPendientes().getSize(), asesor);
-        historialAdministrativo.push("Registró asesor: " + asesor.getNombre());
+        historialAdministrativo.push("Registró/Actualizó asesor: " + asesor.getNombre());
+    }
+
+    public void eliminarAsesor(String id) {
+        Asesor a = buscarAsesor(id);
+        if (a != null) {
+            tablaAsesores.remove(id);
+            // También deberíamos remover de los árboles si fuera una implementación estricta, 
+            // pero para este MVP el Hash es lo principal para el borrado.
+            historialAdministrativo.push("Eliminó asesor: " + a.getNombre() + " (" + id + ")");
+        }
     }
 
     // --- MÉTODOS DE BÚSQUEDA ---
@@ -223,6 +233,22 @@ public class PropTechSystem {
                 v.setEstado("cancelada");
                 // Nota: En una implementación real, lo quitaríamos de la lista o marcaríamos como inactiva
                 historialAdministrativo.push("Visita cancelada: " + codInmueble);
+                return true;
+            }
+        }
+        return false;
+    }
+
+    public boolean confirmarVisita(String idCliente, String codInmueble) {
+        Asesor a = buscarAsesorParaInmueble(codInmueble);
+        if (a == null) return false;
+
+        CustomList<Visita> visitas = a.getVisitasPendientes().toList();
+        for (int i = 0; i < visitas.getSize(); i++) {
+            Visita v = visitas.get(i);
+            if (v.getCliente().getIdentificacion().equals(idCliente) && v.getInmueble().getCodigo().equals(codInmueble)) {
+                v.setEstado("confirmada");
+                historialAdministrativo.push("Visita confirmada: " + codInmueble + " por cliente " + idCliente);
                 return true;
             }
         }
@@ -853,13 +879,13 @@ public class PropTechSystem {
         String[] jornada = {"08:00", "09:00", "10:00", "11:00", "12:00", "14:00", "15:00", "16:00", "17:00", "18:00"};
         
         for (String hora : jornada) {
-            // Un slot está ocupado si el asesor tiene una visita (estándar o prioritaria) a esa hora y fecha
+            // Un slot está ocupado si el asesor tiene una visita (estándar o prioritaria) a esa hora y fecha y NO está cancelada
             boolean ocupadoEnPendientes = a.getVisitasPendientes().anyMatch(v -> 
-                v.getFecha().equals(fecha) && v.getHora().equals(hora));
+                v.getFecha().equals(fecha) && v.getHora().equals(hora) && !v.getEstado().equalsIgnoreCase("cancelada"));
             
             boolean ocupadoEnPrioridad = colaVisitasPrioritarias.anyMatch(v -> 
                 v.getAsesorAsignado().getIdentificacion().equals(idAsesor) && 
-                v.getFecha().equals(fecha) && v.getHora().equals(hora));
+                v.getFecha().equals(fecha) && v.getHora().equals(hora) && !v.getEstado().equalsIgnoreCase("cancelada"));
 
             if (!ocupadoEnPendientes && !ocupadoEnPrioridad) {
                 slots.add(hora);

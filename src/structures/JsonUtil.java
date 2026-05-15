@@ -36,10 +36,11 @@ public class JsonUtil {
         
         String inmueblesJson = listToJson(a.getInmueblesAsignados(), i -> "\"" + escapeJson(i.getCodigo()) + "\"");
         CustomQueue<Visita> colaVisitas = a.getVisitasPendientes();
+        String visitsJson = listToJson(colaVisitas.toList(), JsonUtil::visitaToJson);
         
         return String.format(java.util.Locale.US,
-            "{\"id\":\"%s\", \"nombre\":\"%s\", \"contacto\":\"%s\", \"zona\":\"%s\", \"cierres\":%d, \"inmueblesCount\":%d, \"inmuebles\":%s, \"visitasCount\":%d}",
-            escapeJson(a.getIdentificacion()), escapeJson(a.getNombre()), escapeJson(a.getContacto()), escapeJson(a.getEspecialidadZona()), a.getCierresRealizados(), a.getInmueblesAsignados().getSize(), inmueblesJson, colaVisitas.getSize()
+            "{\"id\":\"%s\", \"nombre\":\"%s\", \"contacto\":\"%s\", \"zona\":\"%s\", \"cierres\":%d, \"inmueblesCount\":%d, \"inmuebles\":%s, \"visitasCount\":%d, \"visitas\":%s}",
+            escapeJson(a.getIdentificacion()), escapeJson(a.getNombre()), escapeJson(a.getContacto()), escapeJson(a.getEspecialidadZona()), a.getCierresRealizados(), a.getInmueblesAsignados().getSize(), inmueblesJson, colaVisitas.getSize(), visitsJson
         );
     }
 
@@ -68,10 +69,16 @@ public class JsonUtil {
                 escapeJson(v.getAsesorAsignado().getNombre()), 
                 escapeJson(v.getAsesorAsignado().getContacto()));
         }
+        String clienteJson = "null";
+        if (v.getCliente() != null) {
+            clienteJson = String.format("{\"id\":\"%s\", \"nombre\":\"%s\"}", 
+                escapeJson(v.getCliente().getIdentificacion()), 
+                escapeJson(v.getCliente().getNombre()));
+        }
         
         return String.format(java.util.Locale.US,
-            "{\"fecha\":\"%s\", \"hora\":\"%s\", \"estado\":\"%s\", \"observaciones\":\"%s\", \"inmueble\":%s, \"asesor\":%s}",
-            escapeJson(v.getFecha()), escapeJson(v.getHora()), escapeJson(v.getEstado()), escapeJson(v.getObservaciones()), inmuebleJson, asesorJson
+            "{\"fecha\":\"%s\", \"hora\":\"%s\", \"estado\":\"%s\", \"observaciones\":\"%s\", \"inmueble\":%s, \"asesor\":%s, \"cliente\":%s}",
+            escapeJson(v.getFecha()), escapeJson(v.getHora()), escapeJson(v.getEstado()), escapeJson(v.getObservaciones()), inmuebleJson, asesorJson, clienteJson
         );
     }
 

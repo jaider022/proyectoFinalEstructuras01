@@ -42,6 +42,7 @@ public class PropTechServer {
         server.createContext("/api/analitica", new AnaliticaHandler());
         server.createContext("/api/asesores", new AsesoresHandler());
         server.createContext("/api/asesores/add", new AsesorAddHandler());
+        server.createContext("/api/asesores/delete", new AsesorDeleteHandler());
         server.createContext("/api/alertas", new AlertasHandler());
         server.createContext("/api/auditoria", new AuditoriaHandler());
         server.createContext("/api/recomendaciones", new RecomendacionesHandler());
@@ -49,6 +50,7 @@ public class PropTechServer {
         server.createContext("/api/undo/admin", new UndoAdminHandler());
         server.createContext("/api/visitas/reprogramar", new VisitaReprogramarHandler());
         server.createContext("/api/visitas/cancelar", new VisitaCancelarHandler());
+        server.createContext("/api/visitas/confirmar", new VisitaConfirmarHandler());
         server.createContext("/api/operaciones/renovar", new OperacionRenovarHandler());
         server.createContext("/api/reportes", new ReportesHandler());
         server.createContext("/api/simulacion/demanda", new SimulacionDemandaHandler());
@@ -253,6 +255,20 @@ public class PropTechServer {
             } catch (Exception e) {
                 e.printStackTrace();
                 sendResponse(exchange, "{\"status\":\"error\", \"message\":\"" + e.getMessage() + "\"}", 400);
+            }
+        }
+    }
+
+    class AsesorDeleteHandler implements HttpHandler {
+        @Override
+        public void handle(HttpExchange exchange) throws IOException {
+            java.util.Map<String, String> p = getQueryParams(exchange.getRequestURI().getQuery());
+            String id = p.get("id");
+            if (id != null) {
+                sistema.eliminarAsesor(id);
+                sendResponse(exchange, "{\"status\":\"ok\"}", 200);
+            } else {
+                sendResponse(exchange, "{\"status\":\"error\", \"message\":\"ID requerido\"}", 400);
             }
         }
     }
@@ -525,6 +541,15 @@ public class PropTechServer {
         public void handle(HttpExchange exchange) throws IOException {
             java.util.Map<String, String> p = getQueryParams(exchange.getRequestURI().getQuery());
             boolean ok = sistema.cancelarVisita(p.get("cli"), p.get("cod"));
+            sendResponse(exchange, "{\"status\":\"" + (ok ? "ok" : "error") + "\"}", 200);
+        }
+    }
+
+    class VisitaConfirmarHandler implements HttpHandler {
+        @Override
+        public void handle(HttpExchange exchange) throws IOException {
+            java.util.Map<String, String> p = getQueryParams(exchange.getRequestURI().getQuery());
+            boolean ok = sistema.confirmarVisita(p.get("cli"), p.get("cod"));
             sendResponse(exchange, "{\"status\":\"" + (ok ? "ok" : "error") + "\"}", 200);
         }
     }
