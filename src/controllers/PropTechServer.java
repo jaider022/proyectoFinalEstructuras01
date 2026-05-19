@@ -7,6 +7,7 @@ import structures.JsonUtil;
 import structures.CustomList;
 import structures.CustomHashTable;
 import models.*;
+import servicios_ia.*;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.net.InetSocketAddress;
@@ -57,8 +58,10 @@ public class PropTechServer {
         server.createContext("/api/rankings", new RankingsHandler());
         server.createContext("/api/clientes/favoritos", new ClienteFavoritosHandler());
         server.createContext("/api/clientes/favoritos/add", new ClienteFavoritosAddHandler());
-        server.createContext("/api/clientes/favoritos/remove", new ClienteFavoritosRemoveHandler());
         server.createContext("/api/clientes/visitas", new ClienteVisitasHandler());
+        server.createContext("/api/ia/predict", new IAPredictHandler());
+        server.createContext("/api/ia/sentiment", new IASentimentHandler());
+        server.createContext("/api/ia/chat", new IAChatHandler());
 
         server.setExecutor(null);
         System.out.println("Servidor PropTech iniciado en http://localhost:" + port);
@@ -358,11 +361,15 @@ public class PropTechServer {
         public void handle(HttpExchange exchange) throws IOException {
             java.util.Map<String, String> p = getQueryParams(exchange.getRequestURI().getQuery());
             try {
-                // sistema.agendarVisita(idCliente, codInmueble, idAsesor, fecha, hora)
-                // Usamos el asesor responsable del inmueble si existe, sino el primer asesor disponible
-                Inmueble i = sistema.buscarInmueble(p.get("cod"));
-                String idAsesor = (i != null && i.getAsesorResponsable() != null) ? 
-                    i.getAsesorResponsable().getIdentificacion() : "A-001"; // Fallback por defecto
+                // Si el usuario especificó un asesor, lo usamos. Si no, asignación automática.
+                String idAsesor = p.get("ase");
+                if (idAsesor == null || idAsesor.trim().isEmpty() || idAsesor.equals("null") || idAsesor.equals("ANY")) {
+                    idAsesor = sistema.encontrarAsesorLibreParaSlot(p.get("cod"), p.get("fec"), p.get("hor"));
+                    if (idAsesor == null) {
+                        sendResponse(exchange, "{\"status\":\"error\", \"message\":\"No hay asesores disponibles o el inmueble está ocupado en ese horario.\"}", 400);
+                        return;
+                    }
+                }
 
                 boolean ok = sistema.agendarVisita(p.get("cli"), p.get("cod"), idAsesor, p.get("fec"), p.get("hor"));
                 if (ok) {
@@ -381,11 +388,12 @@ public class PropTechServer {
         public void handle(HttpExchange exchange) throws IOException {
             java.util.Map<String, String> p = getQueryParams(exchange.getRequestURI().getQuery());
             try {
-                Inmueble i = sistema.buscarInmueble(p.get("cod"));
-                String idAsesor = (i != null && i.getAsesorResponsable() != null) ? 
-                    i.getAsesorResponsable().getIdentificacion() : "A-001";
+                String idAsesor = p.get("ase");
+                if (idAsesor == null || idAsesor.trim().isEmpty() || idAsesor.equals("null")) {
+                    idAsesor = "ANY";
+                }
 
-                CustomList<String> slots = sistema.obtenerSlotsDisponibles(idAsesor, p.get("fec"));
+                CustomList<String> slots = sistema.obtenerSlotsDisponibles(idAsesor, p.get("cod"), p.get("fec"));
                 String response = JsonUtil.listToJson(slots, s -> "\"" + s + "\"");
                 exchange.getResponseHeaders().set("Content-Type", "application/json; charset=UTF-8");
                 sendResponse(exchange, response, 200);
@@ -661,6 +669,68 @@ public class PropTechServer {
             } else {
                 sendResponse(exchange, "[]", 200);
             }
+        }
+    }
+
+    class IAPredictHandler implements HttpHandler {
+        @Override
+        public void handle(HttpExchange exchange) throws IOException {
+            java.util.Map<String, String> p = getQueryParams(exchange.getRequestURI().getQuery());
+            Inmueble i = sistema.buscarInmueble(p.get("cod"));
+            if (i != null) {
+                double precioEst = PredictorPrecio.estimar(i);
+                sendResponse(exchange, "{\"status\":\"ok\", \"precioEstimado\":" + precioEst + "}", 200);
+            } else {
+                sendResponse(exchange, "{\"status\":\"error\", \"message\":\"Inmueble no encontrado\"}", 404);
+            }
+        }
+    }
+
+    class IASentimentHandler implements HttpHandler {
+        @Override
+        public void handle(HttpExchange exchange) throws IOException {
+            java.util.Map<String, String> p;
+            if ("POST".equalsIgnoreCase(exchange.getRequestMethod())) {
+                String body = readRequestBody(exchange);
+                p = parseJson(body);
+            } else {
+                p = getQueryParams(exchange.getRequestURI().getQuery());
+            }
+            String comentario = p.get("texto");
+            String sentimiento = AnalizadorSentimiento.analizar(comentario);
+            sendResponse(exchange, "{\"status\":\"ok\", \"sentimiento\":\"" + sentimiento + "\"}", 200);
+        }
+    }
+
+    class IAChatHandler implements HttpHandler {
+        @Override
+        public void handle(HttpExchange exchange) throws IOException {
+            java.util.Map<String, String> p;
+            if ("POST".equalsIgnoreCase(exchange.getRequestMethod())) {
+                String body = readRequestBody(exchange);
+                p = parseJson(body);
+            } else {
+                p = getQueryParams(exchange.getRequestURI().getQuery());
+            }
+            String mensaje = p.get("mensaje");
+            String rol = p.get("rol");
+            if (rol == null) rol = "guest";
+            if (mensaje == null) mensaje = "";
+
+            AsistenteVirtual asistente = new AsistenteVirtual(sistema);
+            AsistenteVirtual.RespuestaChat respuesta = asistente.procesarMensaje(mensaje, rol);
+            
+            String jsonProps = "[]";
+            if (respuesta.propiedades != null && respuesta.propiedades.getSize() > 0) {
+                jsonProps = JsonUtil.listToJson(respuesta.propiedades, JsonUtil::inmuebleToJson);
+            }
+
+            String textoSeguro = respuesta.texto.replace("\"", "\\\"").replace("\n", " ");
+
+            String finalJson = "{\"status\":\"ok\", \"respuesta\":\"" + textoSeguro + "\", \"inmuebles\":" + jsonProps + "}";
+            
+            exchange.getResponseHeaders().set("Content-Type", "application/json; charset=UTF-8");
+            sendResponse(exchange, finalJson, 200);
         }
     }
 }

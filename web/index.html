@@ -17,18 +17,18 @@
             </div>
             <div class="landing-controls">
                 <button onclick="document.getElementById('modal-register').style.display='flex'" class="secondary-btn">Registrarse</button>
-                <button onclick="document.getElementById('modal-login').style.display='flex'" class="primary-btn-orange">Iniciar Sesión</button>
+                <button onclick="document.getElementById('modal-login').style.display='flex'" class="primary-btn">Iniciar Sesión</button>
             </div>
         </header>
         <div class="landing-hero">
             <div class="hero-box">
                 <h2>Aquí hay un espacio para <span>[tu inmueble]</span></h2>
-                <p style="font-size: 1.2rem; color: var(--text-muted); margin-bottom: 2rem;">
+                <p>
                     La plataforma líder en gestión y búsqueda de propiedades con inteligencia de datos.
                 </p>
                 <div style="display: flex; gap: 15px;">
-                    <button onclick="document.getElementById('modal-register').style.display='flex'" class="primary-btn-orange" style="padding: 1rem 2rem;">Empezar ahora</button>
-                    <button onclick="enterAsGuest()" class="secondary-btn" style="padding: 1rem 2rem;">Ver Catálogo</button>
+                    <button onclick="document.getElementById('modal-register').style.display='flex'" class="primary-btn" style="padding: 1rem 2rem; border-radius: 10px;">Empezar ahora</button>
+                    <button onclick="enterAsGuest()" class="secondary-btn" style="padding: 1rem 2rem; border-radius: 10px;">Ver Catálogo</button>
                 </div>
             </div>
             <div class="hero-image">
@@ -330,11 +330,13 @@
                         <p id="detail-contact">Cargando...</p>
                     </div>
 
-                    <div class="actions-box" style="margin-top: 20px; display: flex; gap: 10px;">
+                    <div class="actions-box" style="margin-top: 20px; display: flex; gap: 10px; flex-wrap: wrap;">
                         <button class="primary-btn" id="btn-schedule-visit">📅 Agendar Visita</button>
+                        <button class="primary-btn" id="btn-ia-predict" style="background: linear-gradient(135deg, #a855f7 0%, #7e22ce 100%); border: none;">✨ Estimar Precio IA</button>
                         <button class="secondary-btn commercial-only" id="btn-change-status" style="display:none">📝 Cerrar Negocio</button>
                         <button class="secondary-btn admin-only" id="btn-edit-prop" style="display:none">✏️ Editar</button>
                     </div>
+                    <div id="ia-prediction-result" style="display:none; padding: 10px; margin-top: 15px; border-radius: 8px; background: #f3e8ff; color: #6b21a8; font-weight: 600; font-size: 1.1rem; border: 1px solid #d8b4fe;"></div>
                 </div>
             </div>
         </div>
@@ -409,6 +411,12 @@
                         <label>Seleccionar Cliente:</label>
                         <select name="cli_manual" id="schedule-client-select">
                             <option value="" disabled selected>Selecciona un cliente...</option>
+                        </select>
+                    </div>
+                    <div class="input-group" id="schedule-asesor-group" style="grid-column: span 2; margin-bottom: 10px;">
+                        <label>Seleccionar Asesor (Opcional):</label>
+                        <select name="ase" id="schedule-asesor-select">
+                            <option value="">(Asignación Automática)</option>
                         </select>
                     </div>
                     <label>Fecha:</label>
@@ -587,6 +595,123 @@
                 </div>
                 <button type="submit" class="primary-btn" style="margin-top: 20px; width: 100%;">Actualizar Cita</button>
             </form>
+        </div>
+    </div>
+
+    <!-- CHATBOT FLOTANTE -->
+    <style>
+        .chatbot-widget {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            width: 320px;
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.2);
+            z-index: 9999;
+            overflow: hidden;
+            display: none;
+            flex-direction: column;
+            border: 1px solid #e2e8f0;
+        }
+        .chatbot-header {
+            background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+            color: white;
+            padding: 12px 15px;
+            font-weight: 600;
+            cursor: pointer;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .chatbot-body {
+            height: 350px;
+            display: flex;
+            flex-direction: column;
+        }
+        .chat-messages {
+            flex: 1;
+            padding: 15px;
+            overflow-y: auto;
+            background: #f8fafc;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+        .chat-msg {
+            max-width: 85%;
+            padding: 8px 12px;
+            border-radius: 15px;
+            font-size: 0.85rem;
+            line-height: 1.4;
+            word-wrap: break-word;
+        }
+        .bot-msg {
+            background: #e0e7ff;
+            color: #1e40af;
+            align-self: flex-start;
+            border-bottom-left-radius: 2px;
+        }
+        .user-msg {
+            background: #3b82f6;
+            color: white;
+            align-self: flex-end;
+            border-bottom-right-radius: 2px;
+        }
+        .chat-input-area {
+            display: flex;
+            padding: 10px;
+            border-top: 1px solid #e2e8f0;
+            background: white;
+        }
+        .chat-input-area input {
+            flex: 1;
+            padding: 8px 12px;
+            border: 1px solid #cbd5e1;
+            border-radius: 20px;
+            outline: none;
+            font-size: 0.85rem;
+        }
+        .chat-input-area button {
+            background: #3b82f6;
+            color: white;
+            border: none;
+            border-radius: 50%;
+            width: 35px;
+            height: 35px;
+            margin-left: 8px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .chat-prop-card {
+            background: white;
+            border: 1px solid #cbd5e1;
+            border-radius: 8px;
+            padding: 8px;
+            margin-top: 5px;
+            cursor: pointer;
+            text-decoration: none;
+            color: inherit;
+        }
+        .chat-prop-card:hover {
+            border-color: #3b82f6;
+        }
+    </style>
+    <div id="chatbot-widget" class="chatbot-widget">
+        <div class="chatbot-header" onclick="toggleChat()">
+            <span>🤖 Asistente Virtual</span>
+            <span id="chat-toggle-icon">▲</span>
+        </div>
+        <div class="chatbot-body" id="chatbot-body" style="display:none;">
+            <div id="chat-messages" class="chat-messages">
+                <div class="chat-msg bot-msg">¡Hola! Soy el Asistente Inteligente de PropTech. ¿En qué te puedo ayudar hoy? Prueba decirme: "Ayúdame a buscar un apartamento de 3 habitaciones en Bogotá".</div>
+            </div>
+            <div class="chat-input-area">
+                <input type="text" id="chat-input" placeholder="Escribe tu mensaje..." onkeypress="if(event.key === 'Enter') enviarMensajeChat()">
+                <button onclick="enviarMensajeChat()">➤</button>
+            </div>
         </div>
     </div>
 

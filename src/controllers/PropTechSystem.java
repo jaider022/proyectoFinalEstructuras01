@@ -157,14 +157,23 @@ public class PropTechSystem {
      * @param prioridad 0 para estándar, >0 para prioritario (1-5)
      */
     public boolean agendarVisita(String idCliente, String codInmueble, String idAsesor, String fecha, String hora, int prioridad) {
+        // Primero busco los objetos completos usando sus IDs. Si no existen, devuelvo null.
         Cliente c = buscarCliente(idCliente);
         Inmueble i = buscarInmueble(codInmueble);
         Asesor a = buscarAsesor(idAsesor);
 
+        // Verifico que todos los datos sean válidos antes de procesar
         if (c != null && i != null && a != null) {
-            // REQUERIMIENTO 4.4: Solo agendar si el inmueble está Disponible
+            // REQUERIMIENTO: Solo agendar si el inmueble está Disponible
             if (!"Disponible".equalsIgnoreCase(i.getDisponibilidad())) {
                 historialAdministrativo.push("RECHAZO: Intento de agenda en inmueble no disponible: " + codInmueble);
+                return false;
+            }
+
+            // REQUERIMIENTO: Validar que el horario esté libre (ni el asesor ni el inmueble estén ocupados)
+            CustomList<String> disponibles = obtenerSlotsDisponibles(idAsesor, codInmueble, fecha);
+            if (disponibles.indexOf(hora) == -1) {
+                historialAdministrativo.push("RECHAZO: Cruce de horarios para inmueble " + codInmueble + " o asesor " + idAsesor);
                 return false;
             }
 
@@ -205,51 +214,61 @@ public class PropTechSystem {
     }
 
     public boolean reprogramarVisita(String idCliente, String codInmueble, String nuevaFecha, String nuevaHora) {
-        Asesor a = buscarAsesorParaInmueble(codInmueble);
-        if (a == null) return false;
-        
-        CustomList<Visita> visitas = a.getVisitasPendientes().toList();
-        for (int i = 0; i < visitas.getSize(); i++) {
-            Visita v = visitas.get(i);
-            if (v. getCliente().getIdentificacion().equals(idCliente) && v.getInmueble().getCodigo().equals(codInmueble)) {
-                v.setFecha(nuevaFecha);
-                v.setHora(nuevaHora);
-                v.setEstado("reprogramada");
-                historialAdministrativo.push("Visita reprogramada: " + codInmueble + " para " + nuevaFecha);
-                return true;
+        CustomList<Asesor> todosAsesores = tablaAsesores.toList();
+        for (int j = 0; j < todosAsesores.getSize(); j++) {
+            Asesor a = todosAsesores.get(j);
+            CustomList<Visita> visitas = a.getVisitasPendientes().toList();
+            for (int i = 0; i < visitas.getSize(); i++) {
+                Visita v = visitas.get(i);
+                if (v.getCliente().getIdentificacion().equals(idCliente) && v.getInmueble().getCodigo().equals(codInmueble)) {
+                    v.setFecha(nuevaFecha);
+                    v.setHora(nuevaHora);
+                    v.setEstado("reprogramada");
+                    historialAdministrativo.push("Visita reprogramada: " + codInmueble + " para " + nuevaFecha);
+                    return true;
+                }
             }
         }
         return false;
     }
 
     public boolean cancelarVisita(String idCliente, String codInmueble) {
-        Asesor a = buscarAsesorParaInmueble(codInmueble);
-        if (a == null) return false;
-
-        CustomList<Visita> visitas = a.getVisitasPendientes().toList();
-        for (int i = 0; i < visitas.getSize(); i++) {
-            Visita v = visitas.get(i);
-            if (v.getCliente().getIdentificacion().equals(idCliente) && v.getInmueble().getCodigo().equals(codInmueble)) {
-                v.setEstado("cancelada");
-                // Nota: En una implementación real, lo quitaríamos de la lista o marcaríamos como inactiva
-                historialAdministrativo.push("Visita cancelada: " + codInmueble);
-                return true;
+        CustomList<Asesor> todosAsesores = tablaAsesores.toList();
+        
+        // Recorro a todos los asesores para encontrar quién tiene esta cita
+        for (int j = 0; j < todosAsesores.getSize(); j++) {
+            Asesor a = todosAsesores.get(j);
+            CustomList<Visita> visitas = a.getVisitasPendientes().toList();
+            
+            // Reviso la agenda específica de cada asesor buscando la visita exacta
+            for (int i = 0; i < visitas.getSize(); i++) {
+                Visita v = visitas.get(i);
+                if (v.getCliente().getIdentificacion().equals(idCliente) && v.getInmueble().getCodigo().equals(codInmueble)) {
+                    v.setEstado("cancelada");
+                    
+                    // Aquí es donde elimino físicamente la cita de la cola (CustomQueue) para limpiar el calendario
+                    a.getVisitasPendientes().remove(v); 
+                    
+                    historialAdministrativo.push("Visita cancelada y removida: " + codInmueble);
+                    return true;
+                }
             }
         }
         return false;
     }
 
     public boolean confirmarVisita(String idCliente, String codInmueble) {
-        Asesor a = buscarAsesorParaInmueble(codInmueble);
-        if (a == null) return false;
-
-        CustomList<Visita> visitas = a.getVisitasPendientes().toList();
-        for (int i = 0; i < visitas.getSize(); i++) {
-            Visita v = visitas.get(i);
-            if (v.getCliente().getIdentificacion().equals(idCliente) && v.getInmueble().getCodigo().equals(codInmueble)) {
-                v.setEstado("confirmada");
-                historialAdministrativo.push("Visita confirmada: " + codInmueble + " por cliente " + idCliente);
-                return true;
+        CustomList<Asesor> todosAsesores = tablaAsesores.toList();
+        for (int j = 0; j < todosAsesores.getSize(); j++) {
+            Asesor a = todosAsesores.get(j);
+            CustomList<Visita> visitas = a.getVisitasPendientes().toList();
+            for (int i = 0; i < visitas.getSize(); i++) {
+                Visita v = visitas.get(i);
+                if (v.getCliente().getIdentificacion().equals(idCliente) && v.getInmueble().getCodigo().equals(codInmueble)) {
+                    v.setEstado("confirmada");
+                    historialAdministrativo.push("Visita confirmada: " + codInmueble + " por cliente " + idCliente);
+                    return true;
+                }
             }
         }
         return false;
@@ -866,29 +885,125 @@ public class PropTechSystem {
         return tablaClientes.toList();
     }
 
+    public String encontrarAsesorLibreParaSlot(String codInmueble, String fecha, String hora) {
+        CustomList<Asesor> todosAsesores = tablaAsesores.toList();
+        
+        // Primero verifico si la propiedad ya está ocupada por algún otro asesor a esa misma hora
+        boolean ocupadoInmueble = false;
+        for (int i = 0; i < todosAsesores.getSize(); i++) {
+            Asesor otroA = todosAsesores.get(i);
+            if (otroA.getVisitasPendientes().anyMatch(v -> 
+                v.getInmueble().getCodigo().equals(codInmueble) && 
+                v.getFecha().equals(fecha) && v.getHora().equals(hora) && !v.getEstado().equalsIgnoreCase("cancelada"))) {
+                ocupadoInmueble = true;
+                break;
+            }
+        }
+        
+        // También reviso la cola de prioridad (los VIPs no se nos pueden cruzar tampoco)
+        boolean ocupadoPrioridadInmueble = colaVisitasPrioritarias.anyMatch(v -> 
+            v.getInmueble().getCodigo().equals(codInmueble) && 
+            v.getFecha().equals(fecha) && v.getHora().equals(hora) && !v.getEstado().equalsIgnoreCase("cancelada"));
+
+        // Si la propiedad está ocupada, corto de una vez, no le puedo asignar a nadie esta visita
+        if (ocupadoInmueble || ocupadoPrioridadInmueble) return null;
+
+        // Si está libre, intento darle prioridad al asesor que es dueño de este inmueble
+        Inmueble in = buscarInmueble(codInmueble);
+        if (in != null && in.getAsesorResponsable() != null) {
+            Asesor resp = in.getAsesorResponsable();
+            // Reviso que este asesor principal no esté ocupado ni en citas normales ni VIP
+            boolean librePend = !resp.getVisitasPendientes().anyMatch(v -> v.getFecha().equals(fecha) && v.getHora().equals(hora) && !v.getEstado().equalsIgnoreCase("cancelada"));
+            boolean librePrio = !colaVisitasPrioritarias.anyMatch(v -> v.getAsesorAsignado().getIdentificacion().equals(resp.getIdentificacion()) && v.getFecha().equals(fecha) && v.getHora().equals(hora) && !v.getEstado().equalsIgnoreCase("cancelada"));
+            if (librePend && librePrio) return resp.getIdentificacion();
+        }
+
+        // Si el asesor principal estaba ocupado (o no tiene), recorro toda la empresa buscando el primero que esté libre
+        for (int i = 0; i < todosAsesores.getSize(); i++) {
+            Asesor candidato = todosAsesores.get(i);
+            boolean librePend = !candidato.getVisitasPendientes().anyMatch(v -> v.getFecha().equals(fecha) && v.getHora().equals(hora) && !v.getEstado().equalsIgnoreCase("cancelada"));
+            boolean librePrio = !colaVisitasPrioritarias.anyMatch(v -> v.getAsesorAsignado().getIdentificacion().equals(candidato.getIdentificacion()) && v.getFecha().equals(fecha) && v.getHora().equals(hora) && !v.getEstado().equalsIgnoreCase("cancelada"));
+            if (librePend && librePrio) {
+                // Encontré un asesor libre, le tiro la cita a él
+                return candidato.getIdentificacion();
+            }
+        }
+        return null;
+    }
+
     /**
      * Calcula los horarios disponibles para un asesor en una fecha específica.
      * Basado en una jornada de 08:00 a 18:00 cada hora.
      */
-    public CustomList<String> obtenerSlotsDisponibles(String idAsesor, String fecha) {
+    public CustomList<String> obtenerSlotsDisponibles(String idAsesor, String codInmueble, String fecha) {
         CustomList<String> slots = new CustomList<>();
-        Asesor a = buscarAsesor(idAsesor);
-        if (a == null) return slots;
+        
+        // Si no se pasó un asesor específico, buscaremos si ALGUNO está libre.
+        boolean esAsignacionAutomatica = (idAsesor == null || idAsesor.trim().isEmpty() || idAsesor.equals("ANY"));
+        Asesor aEspecifico = esAsignacionAutomatica ? null : buscarAsesor(idAsesor);
+        
+        // Si pidieron un asesor específico y no existe, no hay slots
+        if (!esAsignacionAutomatica && aEspecifico == null) return slots;
 
         // Definimos slots base
         String[] jornada = {"08:00", "09:00", "10:00", "11:00", "12:00", "14:00", "15:00", "16:00", "17:00", "18:00"};
+        CustomList<Asesor> todosAsesores = tablaAsesores.toList();
         
         for (String hora : jornada) {
-            // Un slot está ocupado si el asesor tiene una visita (estándar o prioritaria) a esa hora y fecha y NO está cancelada
-            boolean ocupadoEnPendientes = a.getVisitasPendientes().anyMatch(v -> 
-                v.getFecha().equals(fecha) && v.getHora().equals(hora) && !v.getEstado().equalsIgnoreCase("cancelada"));
+            // 1. Verificar si EL INMUEBLE ya está ocupado a esa hora por CUALQUIER asesor
+            boolean ocupadoInmueble = false;
+            for (int i = 0; i < todosAsesores.getSize(); i++) {
+                Asesor otroA = todosAsesores.get(i);
+                if (otroA.getVisitasPendientes().anyMatch(v -> 
+                    v.getInmueble().getCodigo().equals(codInmueble) && 
+                    v.getFecha().equals(fecha) && v.getHora().equals(hora) && !v.getEstado().equalsIgnoreCase("cancelada"))) {
+                    ocupadoInmueble = true;
+                    break;
+                }
+            }
             
-            boolean ocupadoEnPrioridad = colaVisitasPrioritarias.anyMatch(v -> 
-                v.getAsesorAsignado().getIdentificacion().equals(idAsesor) && 
+            boolean ocupadoPrioridadInmueble = colaVisitasPrioritarias.anyMatch(v -> 
+                v.getInmueble().getCodigo().equals(codInmueble) && 
                 v.getFecha().equals(fecha) && v.getHora().equals(hora) && !v.getEstado().equalsIgnoreCase("cancelada"));
 
-            if (!ocupadoEnPendientes && !ocupadoEnPrioridad) {
-                slots.add(hora);
+            // Si el inmueble está ocupado, descartar la hora inmediatamente
+            if (ocupadoInmueble || ocupadoPrioridadInmueble) {
+                continue;
+            }
+
+            // 2. Verificar disponibilidad de Asesor(es)
+            if (!esAsignacionAutomatica) {
+                // Verificar solo el asesor seleccionado
+                boolean ocupadoAsesor = aEspecifico.getVisitasPendientes().anyMatch(v -> 
+                    v.getFecha().equals(fecha) && v.getHora().equals(hora) && !v.getEstado().equalsIgnoreCase("cancelada"));
+                
+                boolean ocupadoPrioridadAsesor = colaVisitasPrioritarias.anyMatch(v -> 
+                    v.getAsesorAsignado().getIdentificacion().equals(idAsesor) && 
+                    v.getFecha().equals(fecha) && v.getHora().equals(hora) && !v.getEstado().equalsIgnoreCase("cancelada"));
+                
+                if (!ocupadoAsesor && !ocupadoPrioridadAsesor) {
+                    slots.add(hora);
+                }
+            } else {
+                // Asignación automática: Buscar si al menos UN asesor está libre
+                boolean algunAsesorLibre = false;
+                for (int i = 0; i < todosAsesores.getSize(); i++) {
+                    Asesor candidato = todosAsesores.get(i);
+                    boolean ocupadoCandidato = candidato.getVisitasPendientes().anyMatch(v -> 
+                        v.getFecha().equals(fecha) && v.getHora().equals(hora) && !v.getEstado().equalsIgnoreCase("cancelada"));
+                    boolean ocupadoPrioridadCandidato = colaVisitasPrioritarias.anyMatch(v -> 
+                        v.getAsesorAsignado().getIdentificacion().equals(candidato.getIdentificacion()) && 
+                        v.getFecha().equals(fecha) && v.getHora().equals(hora) && !v.getEstado().equalsIgnoreCase("cancelada"));
+                    
+                    if (!ocupadoCandidato && !ocupadoPrioridadCandidato) {
+                        algunAsesorLibre = true;
+                        break;
+                    }
+                }
+                
+                if (algunAsesorLibre) {
+                    slots.add(hora);
+                }
             }
         }
         

@@ -60,6 +60,26 @@ public class CustomQueue<T> {
         return false;
     }
 
+    public void remove(T data) {
+        Node<T> current = front;
+        Node<T> prev = null;
+        while (current != null) {
+            if (current.getData().equals(data)) {
+                if (prev == null) {
+                    front = current.getNext();
+                    if (front == null) rear = null;
+                } else {
+                    prev.setNext(current.getNext());
+                    if (current.getNext() == null) rear = prev;
+                }
+                size--;
+                return; // Eliminado el primero que coincida
+            }
+            prev = current;
+            current = current.getNext();
+        }
+    }
+
     public CustomList<T> toList() {
         CustomList<T> list = new CustomList<>();
         Node<T> current = front;

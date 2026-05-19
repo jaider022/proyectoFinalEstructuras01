@@ -43,8 +43,10 @@ async function loadSession() {
         // Actualizar UI básica para evitar parpadeo
         const lv = document.getElementById('landing-view');
         const ac = document.getElementById('app-container');
+        const cbw = document.getElementById('chatbot-widget');
         if (lv) lv.style.display = 'none';
         if (ac) ac.style.display = 'flex';
+        if (cbw) cbw.style.display = 'flex';
         
         await fetchData();
         applyRoleRestrictions();
@@ -86,6 +88,8 @@ function setupInteractions() {
     window.enterAsGuest = () => {
         landingView.style.display = 'none';
         appContainer.style.display = 'flex';
+        const cbw = document.getElementById('chatbot-widget');
+        if(cbw) cbw.style.display = 'flex';
         currentRole = 'guest';
         applyRoleRestrictions();
         switchView('dashboard');
@@ -113,6 +117,8 @@ function setupInteractions() {
             switchView('dashboard');
             document.getElementById('landing-view').style.display = 'flex';
             document.getElementById('app-container').style.display = 'none';
+            const cbw = document.getElementById('chatbot-widget');
+            if(cbw) cbw.style.display = 'none';
             applyRoleRestrictions();
         };
     }
@@ -132,6 +138,8 @@ function setupInteractions() {
             applyRoleRestrictions();
             document.getElementById('landing-view').style.display = 'flex';
             document.getElementById('app-container').style.display = 'none';
+            const cbw = document.getElementById('chatbot-widget');
+            if(cbw) cbw.style.display = 'none';
         };
     }
 
@@ -170,6 +178,8 @@ function setupInteractions() {
                     // Actualizar UI
                     document.getElementById('landing-view').style.display = 'none';
                     document.getElementById('app-container').style.display = 'flex';
+                    const cbw = document.getElementById('chatbot-widget');
+                    if (cbw) cbw.style.display = 'flex';
                     applyRoleRestrictions();
                     
                     showNotification('¡Bienvenido!', `Acceso como ${data.role.toUpperCase()}`, 'success');
@@ -213,6 +223,8 @@ function setupInteractions() {
             // Mostrar App
             document.getElementById('landing-view').style.display = 'none';
             document.getElementById('app-container').style.display = 'flex';
+            const cbw = document.getElementById('chatbot-widget');
+            if (cbw) cbw.style.display = 'flex';
             applyRoleRestrictions();
             
             switchView('dashboard');
@@ -324,7 +336,30 @@ function setupInteractions() {
     // Cerrar detalles
     document.querySelector('#modal-details .close-btn').onclick = () => {
         document.getElementById('modal-details').style.display = 'none';
+        const resultDiv = document.getElementById('ia-prediction-result');
+        if (resultDiv) resultDiv.style.display = 'none';
     };
+
+    const btnIaPredict = document.getElementById('btn-ia-predict');
+    if (btnIaPredict) {
+        btnIaPredict.onclick = async () => {
+            const propId = document.getElementById('schedule-cod').value;
+            const resultDiv = document.getElementById('ia-prediction-result');
+            resultDiv.style.display = 'block';
+            resultDiv.textContent = "Calculando con IA...";
+            try {
+                const res = await fetch(`/api/ia/predict?cod=${propId}`);
+                const data = await res.json();
+                if (data.status === 'ok') {
+                    resultDiv.textContent = `🤖 Precio Sugerido por IA: $${data.precioEstimado.toLocaleString()}`;
+                } else {
+                    resultDiv.textContent = "Error: " + data.message;
+                }
+            } catch (err) {
+                resultDiv.textContent = "Error de conexión con IA.";
+            }
+        };
+    }
 
     // Cerrar lightbox
     const closeLightboxBtn = document.getElementById('close-lightbox');
@@ -375,6 +410,32 @@ function setupInteractions() {
             clientGroup.style.display = 'none';
         }
 
+        // Ocultar selector de asesor si es un asesor logueado
+        const asesorGroup = document.getElementById('schedule-asesor-group');
+        if (asesorGroup) {
+            if (currentRole === 'asesor') {
+                asesorGroup.style.display = 'none';
+            } else {
+                asesorGroup.style.display = 'block';
+            }
+        }
+
+        // Cargar lista de asesores disponibles
+        const selAsesor = document.getElementById('schedule-asesor-select');
+        if(selAsesor && currentRole !== 'asesor') {
+            selAsesor.innerHTML = '<option value="">(Asignación Automática)</option>';
+            fetch('/api/asesores')
+                .then(r => r.json())
+                .then(asesores => {
+                    if (Array.isArray(asesores)) {
+                        asesores.forEach(a => {
+                            selAsesor.innerHTML += `<option value="${a.id}">${a.nombre} - Zona: ${a.zona} (🏆 ${a.cierres} cierres)</option>`;
+                        });
+                    }
+                })
+                .catch(e => console.error("Error cargando asesores:", e));
+        }
+
         document.getElementById('modal-schedule').style.display = 'flex';
     };
 
@@ -407,6 +468,11 @@ function setupInteractions() {
 
         params.delete('cli_manual'); // Limpiar antes de enviar
         params.append('cli', clienteId);
+
+        // Si es asesor, forzar que la cita se le asigne a él mismo
+        if (currentRole === 'asesor' && currentClientId) {
+            params.set('ase', currentClientId);
+        }
 
         try {
             console.log("Agendando cita para cliente:", clienteId, "Inmueble:", fd.get('cod'));
@@ -500,7 +566,14 @@ function setupInteractions() {
         container.innerHTML = '<p>Cargando disponibilidad...</p>';
         
         try {
-            const res = await fetch(`/api/visitas/slots?cod=${propId}&fec=${date}`);
+            let aseValue = '';
+            if (currentRole === 'asesor') {
+                aseValue = currentClientId;
+            } else {
+                const aseSelect = document.getElementById('schedule-asesor-select');
+                aseValue = aseSelect ? aseSelect.value : '';
+            }
+            const res = await fetch(`/api/visitas/slots?cod=${propId}&fec=${date}&ase=${aseValue}`);
             const slots = await res.json();
             
             container.innerHTML = '';
@@ -524,6 +597,16 @@ function setupInteractions() {
             container.innerHTML = '<p>Error al cargar horarios.</p>';
         }
     };
+
+    const scheduleAsesorSelect = document.getElementById('schedule-asesor-select');
+    if (scheduleAsesorSelect) {
+        scheduleAsesorSelect.onchange = () => {
+            if (scheduleDate.value) {
+                // Disparar el evento change de la fecha para recargar los slots
+                scheduleDate.dispatchEvent(new Event('change'));
+            }
+        };
+    }
 
     // Barra de búsqueda global
     const searchInput = document.querySelector('.search-bar input');
@@ -781,8 +864,10 @@ function applyRoleRestrictions() {
         // Ocultar landing si estaba visible
         const lv = document.getElementById('landing-view');
         const ac = document.getElementById('app-container');
+        const cbw = document.getElementById('chatbot-widget');
         if(lv) lv.style.display = 'none';
         if(ac) ac.style.display = 'flex';
+        if(cbw) cbw.style.display = 'flex';
         
         const roleBadge = document.getElementById('role-badge');
         if (roleBadge) roleBadge.style.display = 'flex';
@@ -807,8 +892,10 @@ function applyRoleRestrictions() {
         // Ocultar landing si estaba visible
         const lv = document.getElementById('landing-view');
         const ac = document.getElementById('app-container');
+        const cbw = document.getElementById('chatbot-widget');
         if(lv) lv.style.display = 'none';
         if(ac) ac.style.display = 'flex';
+        if(cbw) cbw.style.display = 'flex';
         
         const roleBadge = document.getElementById('role-badge');
         if (roleBadge) roleBadge.style.display = 'flex';
@@ -830,8 +917,10 @@ function applyRoleRestrictions() {
         
         const lv = document.getElementById('landing-view');
         const ac = document.getElementById('app-container');
+        const cbw = document.getElementById('chatbot-widget');
         if(lv) lv.style.display = 'none';
         if(ac) ac.style.display = 'flex';
+        if(cbw) cbw.style.display = 'flex';
         
         const roleBadge = document.getElementById('role-badge');
         if (roleBadge) roleBadge.style.display = 'flex';
@@ -1709,17 +1798,26 @@ function renderAsesorDashboard(asesor) {
             card.className = 'visit-card-compact';
             card.style.background = 'white';
             card.innerHTML = `
-                <div class="info">
-                    <h4>${v.inmueble ? v.inmueble.direccion : 'Inmueble'}</h4>
-                    <p>📍 ${v.inmueble ? v.inmueble.ciudad : ''} | 📅 ${v.fecha} | ⏰ ${v.hora}</p>
-                    <p style="font-size:0.8rem; color:var(--accent-color);">Cliente: ${v.cliente ? v.cliente.nombre : 'Anónimo'}</p>
-                </div>
-                <div class="actions-status" style="display:flex; flex-direction:column; gap:5px; align-items:flex-end;">
-                    <div style="font-size:0.75rem; font-weight:bold; padding:3px 8px; border-radius:4px; background:${v.estado.toLowerCase() === 'confirmada' ? '#dcfce7' : (v.estado.toLowerCase() === 'cancelada' ? '#fee2e2' : '#fef3c7')}; color:${v.estado.toLowerCase() === 'confirmada' ? '#166534' : (v.estado.toLowerCase() === 'cancelada' ? '#991b1b' : '#92400e')}; margin-bottom:5px;">
-                        ${v.estado.toUpperCase()}
+                <div style="display:flex; justify-content:space-between;">
+                    <div class="info">
+                        <h4>${v.inmueble ? v.inmueble.direccion : 'Inmueble'}</h4>
+                        <p>📍 ${v.inmueble ? v.inmueble.ciudad : ''} | 📅 ${v.fecha} | ⏰ ${v.hora}</p>
+                        <p style="font-size:0.8rem; color:var(--accent-color);">Cliente: ${v.cliente ? v.cliente.nombre : 'Anónimo'}</p>
                     </div>
-                    <button class="secondary-btn" style="padding:4px 8px; font-size:0.75rem;" onclick="openReprogramModal('${v.inmueble.codigo}', '${v.cliente ? v.cliente.id : ''}')">Reagendar</button>
-                    <button class="secondary-btn" style="padding:4px 8px; font-size:0.75rem; border-color:#ef4444; color:#ef4444;" onclick="cancelVisit('${v.inmueble.codigo}', '${v.cliente ? v.cliente.id : ''}')">Cancelar</button>
+                    <div class="actions-status" style="display:flex; flex-direction:column; gap:5px; align-items:flex-end;">
+                        <div style="font-size:0.75rem; font-weight:bold; padding:3px 8px; border-radius:4px; background:${v.estado.toLowerCase() === 'confirmada' ? '#dcfce7' : (v.estado.toLowerCase() === 'cancelada' ? '#fee2e2' : '#fef3c7')}; color:${v.estado.toLowerCase() === 'confirmada' ? '#166534' : (v.estado.toLowerCase() === 'cancelada' ? '#991b1b' : '#92400e')}; margin-bottom:5px;">
+                            ${v.estado.toUpperCase()}
+                        </div>
+                        <button class="secondary-btn" style="padding:4px 8px; font-size:0.75rem;" onclick="openReprogramModal('${v.inmueble.codigo}', '${v.cliente ? v.cliente.id : ''}')">Reagendar</button>
+                        <button class="secondary-btn" style="padding:4px 8px; font-size:0.75rem; border-color:#ef4444; color:#ef4444;" onclick="cancelVisit('${v.inmueble.codigo}', '${v.cliente ? v.cliente.id : ''}')">Cancelar</button>
+                    </div>
+                </div>
+                <div style="margin-top: 10px; border-top: 1px dashed #ccc; padding-top: 10px; width: 100%;">
+                    <textarea id="comment-${v.inmueble.codigo}" placeholder="Comentario post-visita..." style="width: 100%; height: 35px; font-size: 0.8rem; border: 1px solid #ccc; border-radius: 4px; padding: 5px;"></textarea>
+                    <div style="display:flex; justify-content:space-between; align-items:center; margin-top: 5px;">
+                        <button onclick="analizarSentimiento('${v.inmueble.codigo}')" style="background: linear-gradient(135deg, #10b981 0%, #059669 100%); color:white; border:none; border-radius:4px; padding: 5px 10px; font-size: 0.75rem; cursor:pointer;">🧠 Analizar Sentimiento</button>
+                        <span id="sentiment-result-${v.inmueble.codigo}" style="font-size: 0.75rem; font-weight: bold; padding: 2px 5px; border-radius: 3px;"></span>
+                    </div>
                 </div>
             `;
             visitsContainer.appendChild(card);
@@ -1874,4 +1972,127 @@ window.openReprogramModal = (codInmueble, manualClientId = null) => {
     document.getElementById('reprogram-cod').value = codInmueble;
     document.getElementById('form-reprogram').reset();
     document.getElementById('reprogram-slots-container').innerHTML = '<p style="font-size: 0.8rem; color: var(--text-muted);">Selecciona una fecha para ver horarios.</p>';
+};
+
+window.analizarSentimiento = async (codInmueble) => {
+    const commentBox = document.getElementById('comment-' + codInmueble);
+    const resultSpan = document.getElementById('sentiment-result-' + codInmueble);
+    if (!commentBox || !resultSpan) return;
+    
+    const texto = commentBox.value.trim();
+    if (!texto) {
+        resultSpan.textContent = "Escribe un comentario primero";
+        resultSpan.style.color = "red";
+        return;
+    }
+    
+    resultSpan.textContent = "Analizando...";
+    resultSpan.style.color = "var(--text-muted)";
+    
+    try {
+        const res = await fetch('/api/ia/sentiment', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({texto: texto})
+        });
+        const data = await res.json();
+        if (data.status === 'ok') {
+            const sent = data.sentimiento;
+            resultSpan.textContent = sent;
+            if (sent === 'POSITIVO') {
+                resultSpan.style.background = '#dcfce7';
+                resultSpan.style.color = '#166534';
+            } else if (sent === 'NEGATIVO') {
+                resultSpan.style.background = '#fee2e2';
+                resultSpan.style.color = '#991b1b';
+            } else {
+                resultSpan.style.background = '#f3f4f6';
+                resultSpan.style.color = '#374151';
+            }
+        }
+    } catch(err) {
+        resultSpan.textContent = "Error";
+    }
+};
+
+// ==========================================
+// CHATBOT LOGIC
+// ==========================================
+window.toggleChat = () => {
+    const body = document.getElementById('chatbot-body');
+    const icon = document.getElementById('chat-toggle-icon');
+    if (body.style.display === 'none') {
+        body.style.display = 'flex';
+        icon.textContent = '▼';
+    } else {
+        body.style.display = 'none';
+        icon.textContent = '▲';
+    }
+};
+
+window.enviarMensajeChat = async () => {
+    const input = document.getElementById('chat-input');
+    const text = input.value.trim();
+    if (!text) return;
+
+    const messagesDiv = document.getElementById('chat-messages');
+
+    // Mensaje del usuario
+    const userMsg = document.createElement('div');
+    userMsg.className = 'chat-msg user-msg';
+    userMsg.textContent = text;
+    messagesDiv.appendChild(userMsg);
+    input.value = '';
+
+    // Scroll
+    messagesDiv.scrollTop = messagesDiv.scrollHeight;
+
+    // Loading indicator
+    const loadingMsg = document.createElement('div');
+    loadingMsg.className = 'chat-msg bot-msg';
+    loadingMsg.textContent = 'Pensando...';
+    messagesDiv.appendChild(loadingMsg);
+    messagesDiv.scrollTop = messagesDiv.scrollHeight;
+
+    try {
+        const res = await fetch('/api/ia/chat', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({ mensaje: text, rol: currentRole })
+        });
+        const data = await res.json();
+        
+        loadingMsg.remove();
+
+        if (data.status === 'ok') {
+            const botMsg = document.createElement('div');
+            botMsg.className = 'chat-msg bot-msg';
+            botMsg.textContent = data.respuesta;
+            messagesDiv.appendChild(botMsg);
+
+            if (data.inmuebles && data.inmuebles.length > 0) {
+                data.inmuebles.forEach(inm => {
+                    const propCard = document.createElement('div');
+                    propCard.className = 'chat-prop-card';
+                    propCard.innerHTML = `
+                        <strong>${inm.tipo} en ${inm.zona}</strong><br>
+                        <span style="font-size:0.75rem;">${inm.direccion}</span><br>
+                        <span style="color:#2563eb; font-weight:bold;">$${inm.precio.toLocaleString()}</span>
+                    `;
+                    propCard.onclick = () => {
+                        window.toggleChat(); // Ocultar chat
+                        showDetails(inm);    // Mostrar detalle del inmueble
+                        document.getElementById('modal-details').style.display = 'flex';
+                    };
+                    messagesDiv.appendChild(propCard);
+                });
+            }
+        } else {
+            loadingMsg.textContent = "Error al comunicarse con la IA.";
+        }
+    } catch (err) {
+        loadingMsg.textContent = "Error de conexión.";
+    }
+
+    messagesDiv.scrollTop = messagesDiv.scrollHeight;
 };
