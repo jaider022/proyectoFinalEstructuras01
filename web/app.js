@@ -28,6 +28,37 @@ function clearSession() {
     localStorage.removeItem('proptech_isRegistered');
 }
 
+function showNotification(title, message, type = 'info') {
+    const container = document.getElementById('toast-container');
+    if (!container) {
+        alert(`${title}: ${message}`);
+        return;
+    }
+    const toast = document.createElement('div');
+    toast.className = `toast toast-${type}`;
+    
+    // Add some inline styles in case CSS is missing
+    toast.style.padding = '15px';
+    toast.style.borderRadius = '8px';
+    toast.style.marginBottom = '10px';
+    toast.style.boxShadow = '0 4px 6px rgba(0,0,0,0.1)';
+    toast.style.background = type === 'error' ? '#ef4444' : type === 'success' ? '#10b981' : '#3b82f6';
+    toast.style.color = '#fff';
+    toast.style.transition = 'opacity 0.3s';
+    
+    toast.innerHTML = `
+        <div style="font-weight: bold; margin-bottom: 5px;">${title}</div>
+        <div style="font-size: 0.9em;">${message}</div>
+    `;
+
+    container.appendChild(toast);
+
+    setTimeout(() => {
+        toast.style.opacity = '0';
+        setTimeout(() => toast.remove(), 300);
+    }, 5000);
+}
+
 async function loadSession() {
     const savedRole = localStorage.getItem('proptech_role');
     const savedClientId = localStorage.getItem('proptech_clientId');
@@ -62,7 +93,19 @@ async function loadSession() {
     }
 }
 
-
+async function logClientInteraction(accion) {
+    if (currentRole === 'cliente' && currentClientId) {
+        try {
+            await fetch('/api/clientes/interaccion', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ cli: currentClientId, accion: accion })
+            });
+        } catch (e) {
+            console.error("No se pudo registrar interacción", e);
+        }
+    }
+}
 
 function setupNavigation() {
     const navItems = document.querySelectorAll('nav li');
@@ -210,7 +253,7 @@ function setupInteractions() {
         currentClientId = fd.get('id');
         try {
             console.log("Enviando registro para:", currentClientId);
-            const res = await fetch(`/api/clientes/register?${params}&tip=Invitado&pre=0&zon=Norte&itm=Generico`);
+            const res = await fetch(`/api/clientes/register?${params}&tip=Invitado`);
             if (!res.ok) throw new Error("Error en el servidor al registrar");
             
             isRegistered = true;
@@ -687,6 +730,28 @@ function setupInteractions() {
         };
     }
 
+    // Modal Preferences Update
+    const formUpdatePref = document.getElementById('form-update-preferences');
+    if (formUpdatePref) {
+        formUpdatePref.onsubmit = async (e) => {
+            e.preventDefault();
+            const fd = new FormData(formUpdatePref);
+            const params = new URLSearchParams(fd).toString();
+            try {
+                const res = await fetch(`/api/clientes/preferencias/update?id=${currentClientId}&${params}`);
+                const result = await res.json();
+                if (result.status === 'ok') {
+                    showNotification('Preferencias actualizadas', 'Tus recomendaciones se han actualizado', 'success');
+                    fetchData(); // Reload recommendations and preferences
+                } else {
+                    showNotification('Error', result.message, 'error');
+                }
+            } catch (e) {
+                showNotification('Error', 'No se pudieron actualizar las preferencias', 'error');
+            }
+        };
+    }
+
     const formFilters = document.getElementById('form-filtros');
     if (formFilters) {
         formFilters.onsubmit = async (e) => {
@@ -832,6 +897,53 @@ function setupInteractions() {
             } catch (err) {
                 container.innerHTML = '<p>Error al cargar horarios.</p>';
             }
+        };
+    }
+
+    // Modal de Historial de Interacciones
+    const btnHistory = document.getElementById('btn-show-history');
+    if (btnHistory) {
+        btnHistory.onclick = async () => {
+            const modal = document.getElementById('modal-historial');
+            const list = document.getElementById('historial-list');
+            list.innerHTML = '<p style="color:var(--text-muted)">Cargando historial...</p>';
+            modal.style.display = 'flex';
+            
+            try {
+                const res = await fetch(`/api/clientes/interacciones?id=${currentClientId}`);
+                const interacciones = await res.json();
+                
+                list.innerHTML = '';
+                if (interacciones.length === 0) {
+                    list.innerHTML = '<p style="color:var(--text-muted)">No hay interacciones recientes.</p>';
+                } else {
+                    interacciones.forEach(item => {
+                        const div = document.createElement('div');
+                        div.style.padding = '10px';
+                        div.style.background = 'var(--bg-secondary)';
+                        div.style.borderRadius = '6px';
+                        div.style.borderLeft = '4px solid var(--primary-color)';
+                        div.style.fontSize = '0.9rem';
+                        
+                        let innerContent = item;
+                        const match = item.match(/(INM-\d+)/);
+                        if (match) {
+                            const propCode = match[1];
+                            innerContent += `<div style="margin-top: 8px;"><button class="secondary-btn" style="padding: 4px 8px; font-size: 0.8rem;" onclick="abrirInmuebleDesdeHistorial('${propCode}')">👁️ Ver Inmueble</button></div>`;
+                        }
+                        div.innerHTML = innerContent;
+                        list.appendChild(div);
+                    });
+                }
+            } catch (err) {
+                list.innerHTML = '<p style="color:red">Error al cargar el historial.</p>';
+            }
+        };
+    }
+    const closeHistory = document.getElementById('close-historial');
+    if (closeHistory) {
+        closeHistory.onclick = () => {
+            document.getElementById('modal-historial').style.display = 'none';
         };
     }
 }
@@ -1059,6 +1171,19 @@ async function fetchClienteData() {
         const favs = await resFavs.json();
         currentClientFavorites = favs.map(p => p.codigo);
         console.log("Updated favorites count:", currentClientFavorites.length);
+        
+        // Populate preferences form if we are a client
+        const me = globalClients.find(c => c.id === currentClientId);
+        if (me) {
+            const elPre = document.getElementById('pref-pre');
+            const elZon = document.getElementById('pref-zon');
+            const elItm = document.getElementById('pref-itm');
+            const elHab = document.getElementById('pref-hab');
+            if (elPre) elPre.value = me.presupuesto || '';
+            if (elZon) elZon.value = me.zona || 'Norte';
+            if (elItm) elItm.value = me.tipoInmueble || 'Apartamento';
+            if (elHab) elHab.value = me.minHabitaciones || '';
+        }
         
         if (document.getElementById('view-cliente-dashboard').style.display !== 'none') {
             await renderClienteDashboard();
@@ -1336,6 +1461,8 @@ function showDetails(p) {
     const validPhotos = (p.fotos && p.fotos.length > 0) ? p.fotos.filter(f => f.length > 10) : [];
     const photos = validPhotos.length > 0 ? validPhotos : [backupPlaceholder];
 
+    logClientInteraction("Visualizó detalles del inmueble " + p.codigo);
+
     document.getElementById('detail-title').textContent = `${p.direccion} - ${p.ciudad}`;
     document.getElementById('detail-price').textContent = `$${p.precio.toLocaleString()}`;
     const mainImg = document.getElementById('main-detail-img');
@@ -1518,6 +1645,16 @@ function showDetails(p) {
     }
 
     document.getElementById('modal-details').style.display = 'flex';
+}
+
+function abrirInmuebleDesdeHistorial(codigo) {
+    const property = globalProperties.find(p => p.codigo === codigo);
+    if (property) {
+        document.getElementById('modal-historial').style.display = 'none';
+        showDetails(property);
+    } else {
+        showNotification('Error', 'El inmueble ya no se encuentra disponible o ha sido eliminado.', 'error');
+    }
 }
 
 async function deletePhoto(property, index) {

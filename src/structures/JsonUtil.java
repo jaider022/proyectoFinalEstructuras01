@@ -47,8 +47,8 @@ public class JsonUtil {
     public static String clienteToJson(Cliente c) {
         if (c == null) return "null";
         return String.format(java.util.Locale.US,
-            "{\"id\":\"%s\", \"nombre\":\"%s\", \"correo\":\"%s\", \"telefono\":\"%s\", \"tipo\":\"%s\", \"presupuesto\":%.2f, \"zona\":\"%s\", \"minHabitaciones\":%d, \"estadoBusqueda\":\"%s\"}",
-            escapeJson(c.getIdentificacion()), escapeJson(c.getNombre()), escapeJson(c.getCorreo()), escapeJson(c.getTelefono()), escapeJson(c.getTipoCliente()), c.getPresupuesto(), escapeJson(c.getZonasDeInteres()), c.getMinHabitaciones(), escapeJson(c.getEstadoBusqueda())
+            "{\"id\":\"%s\", \"nombre\":\"%s\", \"correo\":\"%s\", \"telefono\":\"%s\", \"tipo\":\"%s\", \"presupuesto\":%.2f, \"zona\":\"%s\", \"tipoInmueble\":\"%s\", \"minHabitaciones\":%d, \"estadoBusqueda\":\"%s\"}",
+            escapeJson(c.getIdentificacion()), escapeJson(c.getNombre()), escapeJson(c.getCorreo()), escapeJson(c.getTelefono()), escapeJson(c.getTipoCliente()), c.getPresupuesto(), escapeJson(c.getZonasDeInteres()), escapeJson(c.getTipoInmuebleDeseado()), c.getMinHabitaciones(), escapeJson(c.getEstadoBusqueda())
         );
     }
 

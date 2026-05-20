@@ -1,7 +1,9 @@
 package models;
 
 import structures.CustomList;
-
+import structures.CustomStack;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 public class Cliente {
     private String identificacion;
     private String nombre;
@@ -22,6 +24,7 @@ public class Cliente {
     private CustomList<Inmueble> descartados;
     private CustomList<Inmueble> negociados;
     private CustomList<Visita> historialVisitas;
+    private CustomStack<String> historialInteracciones;
 
     public Cliente(String identificacion, String nombre, String correo, String telefono, 
                    String tipoCliente, double presupuesto, String zonasDeInteres, String tipoInmuebleDeseado,
@@ -42,6 +45,7 @@ public class Cliente {
         this.descartados = new CustomList<>();
         this.negociados = new CustomList<>();
         this.historialVisitas = new CustomList<>();
+        this.historialInteracciones = new CustomStack<>();
     }
 
     public CustomList<Inmueble> getFavoritos() { return favoritos; }
@@ -50,6 +54,12 @@ public class Cliente {
     public CustomList<Inmueble> getDescartados() { return descartados; }
     public CustomList<Inmueble> getNegociados() { return negociados; }
     public CustomList<Visita> getHistorialVisitas() { return historialVisitas; }
+    public CustomStack<String> getHistorialInteracciones() { return historialInteracciones; }
+
+    public void registrarInteraccion(String accion) {
+        String timestamp = LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"));
+        this.historialInteracciones.push(timestamp + " - " + accion);
+    }
 
     // Getters y Setters
     public String getIdentificacion() { return identificacion; }

@@ -58,7 +58,10 @@ public class PropTechServer {
         server.createContext("/api/rankings", new RankingsHandler());
         server.createContext("/api/clientes/favoritos", new ClienteFavoritosHandler());
         server.createContext("/api/clientes/favoritos/add", new ClienteFavoritosAddHandler());
+        server.createContext("/api/clientes/preferencias/update", new ClientePreferenciasUpdateHandler());
         server.createContext("/api/clientes/visitas", new ClienteVisitasHandler());
+        server.createContext("/api/clientes/interacciones", new ClienteInteraccionesHandler());
+        server.createContext("/api/clientes/interaccion", new ClienteInteraccionAddHandler());
         server.createContext("/api/ia/predict", new IAPredictHandler());
         server.createContext("/api/ia/sentiment", new IASentimentHandler());
         server.createContext("/api/ia/chat", new IAChatHandler());
@@ -373,6 +376,10 @@ public class PropTechServer {
 
                 boolean ok = sistema.agendarVisita(p.get("cli"), p.get("cod"), idAsesor, p.get("fec"), p.get("hor"));
                 if (ok) {
+                    Cliente c = sistema.buscarCliente(p.get("cli"));
+                    if (c != null) {
+                        c.registrarInteraccion("Agendó visita para el inmueble " + p.get("cod"));
+                    }
                     sendResponse(exchange, "{\"status\":\"ok\"}", 200);
                 } else {
                     sendResponse(exchange, "{\"status\":\"error\", \"message\":\"No se pudo agendar\"}", 400);
@@ -427,6 +434,7 @@ public class PropTechServer {
                 // 3. Verificar si es Cliente
                 else if (id != null && sistema.buscarCliente(id) != null) {
                     Cliente c = sistema.buscarCliente(id);
+                    c.registrarInteraccion("Inició sesión en la plataforma");
                     response = String.format("{\"status\":\"ok\", \"role\":\"cliente\", \"id\":\"%s\", \"data\":%s}", 
                         id, JsonUtil.clienteToJson(c));
                 }
@@ -644,6 +652,8 @@ public class PropTechServer {
         public void handle(HttpExchange exchange) throws IOException {
             java.util.Map<String, String> p = getQueryParams(exchange.getRequestURI().getQuery());
             sistema.agregarAFavoritos(p.get("cli"), p.get("cod"));
+            Cliente c = sistema.buscarCliente(p.get("cli"));
+            if(c != null) c.registrarInteraccion("Añadió el inmueble " + p.get("cod") + " a favoritos");
             sendResponse(exchange, "{\"status\":\"ok\"}", 200);
         }
     }
@@ -653,6 +663,8 @@ public class PropTechServer {
         public void handle(HttpExchange exchange) throws IOException {
             java.util.Map<String, String> p = getQueryParams(exchange.getRequestURI().getQuery());
             sistema.removerDeFavoritos(p.get("cli"), p.get("cod"));
+            Cliente c = sistema.buscarCliente(p.get("cli"));
+            if(c != null) c.registrarInteraccion("Removió el inmueble " + p.get("cod") + " de favoritos");
             sendResponse(exchange, "{\"status\":\"ok\"}", 200);
         }
     }
@@ -668,6 +680,50 @@ public class PropTechServer {
                 sendResponse(exchange, response, 200);
             } else {
                 sendResponse(exchange, "[]", 200);
+            }
+        }
+    }
+
+    class ClienteInteraccionesHandler implements HttpHandler {
+        @Override
+        public void handle(HttpExchange exchange) throws IOException {
+            java.util.Map<String, String> p = getQueryParams(exchange.getRequestURI().getQuery());
+            Cliente c = sistema.buscarCliente(p.get("id"));
+            if (c != null) {
+                // Convertimos el stack LIFO a lista para enviar
+                CustomList<String> interacciones = c.getHistorialInteracciones().toList();
+                String response = JsonUtil.listToJson(interacciones, s -> "\"" + s + "\"");
+                exchange.getResponseHeaders().set("Content-Type", "application/json; charset=UTF-8");
+                sendResponse(exchange, response, 200);
+            } else {
+                sendResponse(exchange, "[]", 200);
+            }
+        }
+    }
+
+    class ClienteInteraccionAddHandler implements HttpHandler {
+        @Override
+        public void handle(HttpExchange exchange) throws IOException {
+            java.util.Map<String, String> p;
+            if ("POST".equalsIgnoreCase(exchange.getRequestMethod())) {
+                String body = readRequestBody(exchange);
+                p = parseJson(body);
+            } else {
+                p = getQueryParams(exchange.getRequestURI().getQuery());
+            }
+
+            try {
+                String idCli = p.get("cli");
+                String accion = p.get("accion");
+                Cliente c = sistema.buscarCliente(idCli);
+                if (c != null && accion != null && !accion.isEmpty()) {
+                    c.registrarInteraccion(accion);
+                    sendResponse(exchange, "{\"status\":\"ok\"}", 200);
+                } else {
+                    sendResponse(exchange, "{\"status\":\"error\", \"message\":\"Datos inválidos\"}", 400);
+                }
+            } catch (Exception e) {
+                sendResponse(exchange, "{\"status\":\"error\", \"message\":\"Error interno\"}", 500);
             }
         }
     }
@@ -733,4 +789,27 @@ public class PropTechServer {
             sendResponse(exchange, finalJson, 200);
         }
     }
+
+    class ClientePreferenciasUpdateHandler implements HttpHandler {
+        @Override
+        public void handle(HttpExchange exchange) throws IOException {
+            java.util.Map<String, String> p = getQueryParams(exchange.getRequestURI().getQuery());
+            try {
+                String id = p.get("id");
+                Cliente c = sistema.buscarCliente(id);
+                if (c != null) {
+                    if (p.containsKey("pre") && !p.get("pre").isEmpty()) c.setPresupuesto(Double.parseDouble(p.get("pre")));
+                    if (p.containsKey("zon") && !p.get("zon").isEmpty()) c.setZonasDeInteres(p.get("zon"));
+                    if (p.containsKey("itm") && !p.get("itm").isEmpty()) c.setTipoInmuebleDeseado(p.get("itm"));
+                    if (p.containsKey("hab") && !p.get("hab").isEmpty()) c.setMinHabitaciones(Integer.parseInt(p.get("hab")));
+                    sendResponse(exchange, "{\"status\":\"ok\"}", 200);
+                } else {
+                    sendResponse(exchange, "{\"status\":\"error\", \"message\":\"Cliente no encontrado\"}", 400);
+                }
+            } catch (Exception e) {
+                sendResponse(exchange, "{\"status\":\"error\", \"message\":\"" + e.getMessage() + "\"}", 400);
+            }
+        }
+    }
 }
+

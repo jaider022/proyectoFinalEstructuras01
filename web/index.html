@@ -263,8 +263,11 @@
                 <div id="view-cliente-dashboard" class="content-view" style="display:none;">
                     <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem;">
                         <h2 class="section-title" style="margin: 0;">Mi Panel de Cliente</h2>
-                        <div id="cliente-welcome-badge" style="background: var(--soft-blue); padding: 8px 16px; border-radius: 20px; color: var(--accent-color); font-weight: 600;">
-                            Bienvenido
+                        <div style="display: flex; gap: 15px; align-items: center;">
+                            <button id="btn-show-history" class="secondary-btn" style="border-color: var(--primary-color); color: var(--primary-color);">🕒 Mi Historial</button>
+                            <div id="cliente-welcome-badge" style="background: var(--soft-blue); padding: 8px 16px; border-radius: 20px; color: var(--accent-color); font-weight: 600;">
+                                Bienvenido
+                            </div>
                         </div>
                     </div>
 
@@ -280,6 +283,43 @@
                             <div id="cliente-visits-list" style="display: flex; flex-direction: column; gap: 15px;">
                                 <!-- Cargado por JS -->
                             </div>
+                        </div>
+
+                        <div class="preferences-section" style="grid-column: 1 / -1; background: white; padding: 20px; border-radius: 8px; box-shadow: var(--shadow); margin-top: 20px;">
+                            <h3 style="margin-bottom: 1.5rem; display: flex; align-items: center; gap: 10px;">⚙️ Mis Preferencias de Búsqueda</h3>
+                            <p style="margin-bottom: 15px; font-size: 0.9rem; color: var(--text-muted);">Actualiza tus preferencias para recibir mejores recomendaciones.</p>
+                            <form id="form-update-preferences" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; align-items: center;">
+                                <div>
+                                    <label style="font-size: 0.85rem; font-weight: 600;">Presupuesto Máx.</label>
+                                    <input type="number" name="pre" id="pref-pre" placeholder="Ej: 3000000" required>
+                                </div>
+                                <div>
+                                    <label style="font-size: 0.85rem; font-weight: 600;">Zona de Interés</label>
+                                    <select name="zon" id="pref-zon" required>
+                                        <option value="Norte">Norte</option>
+                                        <option value="Chapinero">Chapinero</option>
+                                        <option value="Colina">Colina</option>
+                                        <option value="Centro">Centro</option>
+                                        <option value="Sur">Sur</option>
+                                    </select>
+                                </div>
+                                <div>
+                                    <label style="font-size: 0.85rem; font-weight: 600;">Tipo de Inmueble</label>
+                                    <select name="itm" id="pref-itm" required>
+                                        <option value="Apartamento">Apartamento</option>
+                                        <option value="Casa">Casa</option>
+                                        <option value="Oficina">Oficina</option>
+                                        <option value="Local">Local</option>
+                                    </select>
+                                </div>
+                                <div>
+                                    <label style="font-size: 0.85rem; font-weight: 600;">Mín. Habitaciones</label>
+                                    <input type="number" name="hab" id="pref-hab" placeholder="Ej: 2" required>
+                                </div>
+                                <div style="display: flex; align-items: flex-end;">
+                                    <button type="submit" class="secondary-btn" style="height: 42px; width: 100%;">Actualizar Preferencias</button>
+                                </div>
+                            </form>
                         </div>
                     </div>
                 </div>
@@ -297,7 +337,27 @@
                 <input type="text" name="nom" placeholder="Nombre Completo" required>
                 <input type="email" name="cor" placeholder="Correo Electrónico" required>
                 <input type="text" name="tel" placeholder="Teléfono" required>
-                <button type="submit" class="primary-btn">Comenzar a Explorar</button>
+                
+                <h3 style="margin-top: 15px; font-size: 1rem; border-top: 1px solid #ddd; padding-top: 10px;">Preferencias de Búsqueda</h3>
+                <input type="number" name="pre" placeholder="Presupuesto Máximo ($)" required>
+                <select name="zon" required>
+                    <option value="" disabled selected>Zona de Interés...</option>
+                    <option value="Norte">Norte</option>
+                    <option value="Chapinero">Chapinero</option>
+                    <option value="Colina">Colina</option>
+                    <option value="Centro">Centro</option>
+                    <option value="Sur">Sur</option>
+                </select>
+                <select name="itm" required>
+                    <option value="" disabled selected>Tipo de Inmueble...</option>
+                    <option value="Apartamento">Apartamento</option>
+                    <option value="Casa">Casa</option>
+                    <option value="Oficina">Oficina</option>
+                    <option value="Local">Local</option>
+                </select>
+                <input type="number" name="hab" placeholder="Mínimo de habitaciones" required>
+                
+                <button type="submit" class="primary-btn" style="margin-top: 15px;">Comenzar a Explorar</button>
             </form>
         </div>
     </div>
@@ -482,6 +542,7 @@
                 <select name="tip" id="op-tipo" required>
                     <option value="Venta">Venta</option>
                     <option value="Arriendo">Arriendo</option>
+                    <option value="Renovación">Renovación</option>
                 </select>
 
                 <label style="margin-top:10px;">Valor Acordado ($):</label>
@@ -595,6 +656,18 @@
                 </div>
                 <button type="submit" class="primary-btn" style="margin-top: 20px; width: 100%;">Actualizar Cita</button>
             </form>
+        </div>
+    </div>
+
+    <!-- MODAL HISTORIAL INTERACCIONES -->
+    <div id="modal-historial" class="overlay" style="display:none">
+        <div class="modal">
+            <span class="close-btn" id="close-historial">&times;</span>
+            <h2 style="margin-bottom: 5px;">Mi Historial de Actividad</h2>
+            <p style="margin-bottom: 15px; font-size: 0.9rem; color: var(--text-muted);">Aquí puedes ver tus acciones más recientes en la plataforma.</p>
+            <div id="historial-list" style="max-height: 400px; overflow-y: auto; display: flex; flex-direction: column; gap: 10px; padding-right: 10px;">
+                <!-- Cargado dinámicamente -->
+            </div>
         </div>
     </div>
 

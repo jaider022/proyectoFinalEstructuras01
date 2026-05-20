@@ -36,6 +36,17 @@ public class CustomStack<T> {
         return top.getData();
     }
 
+    // Convertir a lista para facilitar su serialización (Mantiene orden LIFO)
+    public CustomList<T> toList() {
+        CustomList<T> list = new CustomList<>();
+        Node<T> current = top;
+        while (current != null) {
+            list.add(current.getData());
+            current = current.getNext();
+        }
+        return list;
+    }
+
     public boolean isEmpty() { return size == 0; }
     public int getSize() { return size; }
 }
