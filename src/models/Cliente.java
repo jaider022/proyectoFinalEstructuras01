@@ -135,6 +135,27 @@ public class Cliente {
         if (negociados.indexOf(i) == -1) negociados.add(i);
     }
 
+    public boolean prefiere(Inmueble inm) {
+        // 1. Presupuesto (precio <= presupuesto del cliente)
+        boolean cumplePresupuesto = inm.getPrecio() <= this.presupuesto;
+        
+        // 2. Zona (ignorar mayúsculas y permitir coincidencias parciales)
+        boolean cumpleZona = this.zonasDeInteres != null && 
+                             this.zonasDeInteres.toLowerCase().contains(inm.getZona().toLowerCase());
+        
+        // 3. Tipo (mismo tipo de inmueble, ej. apartamento)
+        boolean cumpleTipo = this.tipoInmuebleDeseado != null && 
+                             this.tipoInmuebleDeseado.equalsIgnoreCase(inm.getTipo());
+                             
+        // 4. Disponibilidad (solo inmuebles que estén 'Disponible')
+        boolean estaDisponible = "Disponible".equalsIgnoreCase(inm.getDisponibilidad());
+        
+        // 5. Habitaciones (mayor o igual al mínimo del cliente)
+        boolean cumpleHabitaciones = inm.getHabitaciones() >= this.minHabitaciones;
+
+        return cumplePresupuesto && cumpleZona && cumpleTipo && estaDisponible && cumpleHabitaciones;
+    }
+
     @Override
     public String toString() {
         return "Cliente: " + nombre + " (" + identificacion + ") - Presupuesto: $" + presupuesto + " - Búsqueda: " + estadoBusqueda;

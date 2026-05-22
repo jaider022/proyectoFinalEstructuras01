@@ -47,6 +47,7 @@ public class PropTechServer {
         server.createContext("/api/alertas", new AlertasHandler());
         server.createContext("/api/auditoria", new AuditoriaHandler());
         server.createContext("/api/recomendaciones", new RecomendacionesHandler());
+        server.createContext("/api/recomendaciones/manual", new RecomendacionesManualesHandler());
         server.createContext("/api/undo/snapshot", new UndoSnapshotHandler());
         server.createContext("/api/undo/admin", new UndoAdminHandler());
         server.createContext("/api/visitas/reprogramar", new VisitaReprogramarHandler());
@@ -527,6 +528,23 @@ public class PropTechServer {
         }
     }
 
+    class RecomendacionesManualesHandler implements HttpHandler {
+        @Override
+        public void handle(HttpExchange exchange) throws IOException {
+            java.util.Map<String, String> p = getQueryParams(exchange.getRequestURI().getQuery());
+            String tipo = p.get("tipo");
+            String ciudad = p.get("ciudad");
+            double precioMax = p.get("precioMax") != null && !p.get("precioMax").isEmpty() ? Double.parseDouble(p.get("precioMax")) : 0;
+            int minHabitaciones = p.get("minHabitaciones") != null && !p.get("minHabitaciones").isEmpty() ? Integer.parseInt(p.get("minHabitaciones")) : 0;
+            boolean requiereParqueadero = "true".equalsIgnoreCase(p.get("parqueadero"));
+
+            CustomList<Inmueble> recs = sistema.obtenerRecomendacionesManuales(tipo, ciudad, precioMax, minHabitaciones, requiereParqueadero);
+            String response = JsonUtil.listToJson(recs, JsonUtil::inmuebleToJson);
+            exchange.getResponseHeaders().set("Content-Type", "application/json; charset=UTF-8");
+            sendResponse(exchange, response, 200);
+        }
+    }
+
     class UndoSnapshotHandler implements HttpHandler {
         @Override
         public void handle(HttpExchange exchange) throws IOException {
@@ -582,19 +600,43 @@ public class PropTechServer {
     class ReportesHandler implements HttpHandler {
         @Override
         public void handle(HttpExchange exchange) throws IOException {
-            // Generar un JSON con reportes por zona y cierres
             CustomHashTable<String, Integer> visitasZona = sistema.getVisitasPorZona();
+            CustomHashTable<String, Integer> visitasInm = sistema.getVisitasPorInmueble();
             CustomList<Operacion> ops = sistema.obtenerOperacionesLista();
+            CustomList<Inmueble> catalogo = sistema.obtenerCatalogoLista();
             
             StringBuilder sb = new StringBuilder("{");
+            
+            // 1. Zonas
             sb.append("\"zonas\":[");
-            CustomList<String> keys = visitasZona.keys();
-            for (int i = 0; i < keys.getSize(); i++) {
-                String k = keys.get(i);
+            CustomList<String> keysZ = visitasZona.keys();
+            for (int i = 0; i < keysZ.getSize(); i++) {
+                String k = keysZ.get(i);
                 sb.append(String.format("{\"zona\":\"%s\", \"visitas\":%d}", k, visitasZona.get(k)));
-                if (i < keys.getSize() - 1) sb.append(",");
+                if (i < keysZ.getSize() - 1) sb.append(",");
             }
             sb.append("],");
+            
+            // 2. Visitas por Inmueble
+            sb.append("\"visitas\":[");
+            CustomList<String> keysI = visitasInm.keys();
+            for (int i = 0; i < keysI.getSize(); i++) {
+                String k = keysI.get(i);
+                sb.append(String.format("{\"codigo\":\"%s\", \"visitas\":%d}", k, visitasInm.get(k)));
+                if (i < keysI.getSize() - 1) sb.append(",");
+            }
+            sb.append("],");
+            
+            // 3. Catálogo (Árbol ordenado por Precio)
+            sb.append("\"catalogo\":[");
+            for (int i = 0; i < catalogo.getSize(); i++) {
+                Inmueble inm = catalogo.get(i);
+                sb.append(String.format(java.util.Locale.US, "{\"codigo\":\"%s\", \"precio\":%.2f, \"zona\":\"%s\", \"tipo\":\"%s\"}", inm.getCodigo(), inm.getPrecio(), inm.getZona(), inm.getTipo()));
+                if (i < catalogo.getSize() - 1) sb.append(",");
+            }
+            sb.append("],");
+            
+            // 4. Cierres
             sb.append("\"cierres\":").append(ops.getSize());
             sb.append("}");
             

@@ -140,6 +140,16 @@ public class Inmueble {
                s.equals("sobre planos") || s.equals("remodelado");
     }
 
+    private boolean parqueadero = true; // Default true so we don't break existing properties
+
+    public boolean tieneParqueadero() {
+        return parqueadero;
+    }
+
+    public void setParqueadero(boolean parqueadero) {
+        this.parqueadero = parqueadero;
+    }
+
     public Asesor getAsesorResponsable() { return asesorResponsable; }
     
     public String getFechaUltimaVisita() { return fechaUltimaVisita; }

@@ -1206,6 +1206,9 @@ function switchView(viewId) {
     if (viewId === 'cliente-dashboard') {
         renderClienteDashboard();
     }
+    if (viewId === 'reportes') {
+        loadReportes();
+    }
 }
 
 async function setupSimulacion() {
@@ -2233,3 +2236,32 @@ window.enviarMensajeChat = async () => {
 
     messagesDiv.scrollTop = messagesDiv.scrollHeight;
 };
+
+async function loadReportes() {
+    try {
+        const res = await fetch('/api/reportes');
+        const data = await res.json();
+        
+        document.getElementById('rep-total-cierres').innerText = data.cierres;
+        
+        const zl = document.getElementById('rep-zonas-list');
+        zl.innerHTML = '';
+        data.zonas.forEach(z => {
+            zl.innerHTML += `<li><span style='font-weight:bold'>${z.zona}:</span> ${z.visitas} operaciones cerradas</span></li>`;
+        });
+        
+        const vl = document.getElementById('rep-visitas-list');
+        vl.innerHTML = '';
+        data.visitas.forEach(v => {
+            vl.innerHTML += `<li><span style='font-weight:bold'>${v.codigo}:</span> ${v.visitas} visitas registradas</span></li>`;
+        });
+        
+        const pl = document.getElementById('rep-precio-list');
+        pl.innerHTML = '';
+        data.catalogo.forEach(c => {
+            pl.innerHTML += `<tr style='border-bottom: 1px solid var(--border-color);'><td style='padding: 10px;'>${c.codigo}</td><td style='padding: 10px;'>${c.tipo}</td><td style='padding: 10px;'>${c.zona}</td><td style='padding: 10px; text-align: right; font-weight: 500;'>$${c.precio.toLocaleString()}</td></tr>`;
+        });
+    } catch(e) {
+        console.error('Error loading reportes', e);
+    }
+}

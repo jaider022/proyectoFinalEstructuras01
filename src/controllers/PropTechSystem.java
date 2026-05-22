@@ -150,6 +150,10 @@ public class PropTechSystem {
         return tablaAsesores.toList();
     }
 
+    public CustomHashTable<String, Integer> getVisitasPorInmueble() {
+        return visitasPorInmueble;
+    }
+
     // --- ACCIONES DE NEGOCIO CORE ---
 
     /**
@@ -586,24 +590,8 @@ public class PropTechSystem {
         for (int i = 0; i < todos.getSize(); i++) {
             Inmueble inm = todos.get(i);
             
-            // 1. Presupuesto (precio <= presupuesto del cliente)
-            boolean cumplePresupuesto = inm.getPrecio() <= cliente.getPresupuesto();
-            
-            // 2. Zona (ignorar mayúsculas y permitir coincidencias parciales)
-            boolean cumpleZona = cliente.getZonasDeInteres() != null && 
-                                 cliente.getZonasDeInteres().toLowerCase().contains(inm.getZona().toLowerCase());
-            
-            // 3. Tipo (mismo tipo de inmueble, ej. apartamento)
-            boolean cumpleTipo = cliente.getTipoInmuebleDeseado() != null && 
-                                 cliente.getTipoInmuebleDeseado().equalsIgnoreCase(inm.getTipo());
-                                 
-            // 4. Disponibilidad (solo inmuebles que estén 'Disponible')
-            boolean estaDisponible = "Disponible".equalsIgnoreCase(inm.getDisponibilidad());
-            
-            // 5. Habitaciones (mayor o igual al mínimo del cliente)
-            boolean cumpleHabitaciones = inm.getHabitaciones() >= cliente.getMinHabitaciones();
-
-            if (cumplePresupuesto && cumpleZona && cumpleTipo && estaDisponible && cumpleHabitaciones) {
+            // La lógica de coincidencia se ha movido a la clase Cliente (prefiere)
+            if (cliente.prefiere(inm)) {
                 coincidencias.add(inm);
             }
         }
@@ -637,6 +625,43 @@ public class PropTechSystem {
 
             if (cumpleTipo && cumpleFinalidad && cumpleHabitaciones && cumpleBanos && cumplePrecioMin && cumplePrecioMax && estaDisponible) {
                 coincidencias.add(inm);
+            }
+        }
+        
+        return coincidencias;
+    }
+
+    public CustomList<Inmueble> obtenerRecomendacionesManuales(String tipo, String ciudad, double precioMax, int minHabitaciones, boolean requiereParqueadero) {
+        CustomList<Inmueble> coincidencias = new CustomList<>();
+        CustomList<Inmueble> todos = arbolInmueblesPrecio.toList();
+        
+        for (int i = 0; i < todos.getSize(); i++) {
+            Inmueble inm = todos.get(i);
+            
+            if (!"Disponible".equalsIgnoreCase(inm.getDisponibilidad())) {
+                continue;
+            }
+            
+            boolean cumpleTipo = tipo == null || tipo.isEmpty() || tipo.equalsIgnoreCase("Cualquiera") || tipo.equalsIgnoreCase(inm.getTipo());
+            boolean cumpleCiudad = ciudad == null || ciudad.isEmpty() || ciudad.equalsIgnoreCase("Cualquiera") || ciudad.equalsIgnoreCase(inm.getCiudad());
+            boolean cumplePrecio = precioMax <= 0 || inm.getPrecio() <= precioMax;
+            boolean cumpleHabitaciones = inm.getHabitaciones() >= minHabitaciones;
+            boolean cumpleParqueadero = !requiereParqueadero || inm.tieneParqueadero();
+
+            if (cumpleTipo && cumpleCiudad && cumplePrecio && cumpleHabitaciones && cumpleParqueadero) {
+                coincidencias.add(inm);
+            }
+        }
+        
+        // Ordenar por precio (menor a mayor) usando burbuja (CustomList no tiene .sort)
+        for (int i = 0; i < coincidencias.getSize() - 1; i++) {
+            for (int j = 0; j < coincidencias.getSize() - i - 1; j++) {
+                Inmueble inmA = coincidencias.get(j);
+                Inmueble inmB = coincidencias.get(j + 1);
+                if (inmA.getPrecio() > inmB.getPrecio()) {
+                    coincidencias.set(j, inmB);
+                    coincidencias.set(j + 1, inmA);
+                }
             }
         }
         
