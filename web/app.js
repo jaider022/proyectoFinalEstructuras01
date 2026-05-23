@@ -730,6 +730,37 @@ function setupInteractions() {
         };
     }
 
+    // Formulario Buscador Manual de Recomendaciones (Panel Cliente)
+    const formRecomendadorManual = document.getElementById('form-recomendador-manual');
+    if (formRecomendadorManual) {
+        formRecomendadorManual.onsubmit = async (e) => {
+            e.preventDefault();
+            const fd = new FormData(formRecomendadorManual);
+            const params = new URLSearchParams(fd).toString();
+            const resultsDiv = document.getElementById('manual-recommendations-results');
+            if (resultsDiv) {
+                resultsDiv.style.display = 'block';
+                resultsDiv.innerHTML = '<p style="color:var(--text-muted)">Buscando inmuebles...</p>';
+            }
+            try {
+                const res = await fetch(`/api/recomendaciones/manual?${params}`);
+                if (!res.ok) throw new Error('Error en el servidor');
+                const recs = await res.json();
+                if (resultsDiv) {
+                    if (recs && recs.length > 0) {
+                        resultsDiv.innerHTML = '';
+                        renderProperties(recs, 'manual-recommendations-results');
+                    } else {
+                        resultsDiv.innerHTML = '<p style="color:var(--text-muted); padding: 20px; text-align:center;">No se encontraron inmuebles con esos criterios. Intenta con filtros más amplios.</p>';
+                    }
+                }
+            } catch (err) {
+                if (resultsDiv) resultsDiv.innerHTML = '<p style="color:red">Error al buscar recomendaciones. Intenta nuevamente.</p>';
+                console.error('Error en buscador manual:', err);
+            }
+        };
+    }
+
     // Modal Preferences Update
     const formUpdatePref = document.getElementById('form-update-preferences');
     if (formUpdatePref) {

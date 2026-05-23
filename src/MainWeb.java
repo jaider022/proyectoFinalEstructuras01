@@ -72,9 +72,9 @@ public class MainWeb {
                         sistema.registrarCliente(c2);
 
                         // AGENDAR VISITAS DE PRUEBA PARA QUE SE VEAN LOS CAMBIOS EN EL PANEL
-                        sistema.agendarVisita("C-01", "INM-01", "A-001", "2026-06-15", "10:00 AM", 0);
-                        sistema.agendarVisita("C-02", "INM-05", "A-001", "2026-06-16", "02:00 PM", 1);
-                        sistema.agendarVisita("C-01", "INM-02", "A-002", "2026-06-17", "11:30 AM", 0);
+                        sistema.agendarVisita("C-01", "INM-01", "A-001", "2026-06-15", "10:00", 0);
+                        sistema.agendarVisita("C-02", "INM-05", "A-001", "2026-06-16", "14:00", 1);
+                        sistema.agendarVisita("C-01", "INM-02", "A-002", "2026-06-17", "11:00", 0);
 
                         Cliente c3 = new Cliente("C-03", "Ana Arrendataria", "ana@mail.com", "333", "Arrendatario",
                                         6000.0, "Chapinero",
