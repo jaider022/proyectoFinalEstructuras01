@@ -93,13 +93,15 @@ async function loadSession() {
     }
 }
 
-async function logClientInteraction(accion) {
+async function logClientInteraction(accion, codInmueble = null) {
     if (currentRole === 'cliente' && currentClientId) {
         try {
+            const bodyObj = { cli: currentClientId, accion: accion };
+            if (codInmueble) bodyObj.cod = codInmueble;
             await fetch('/api/clientes/interaccion', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ cli: currentClientId, accion: accion })
+                body: JSON.stringify(bodyObj)
             });
         } catch (e) {
             console.error("No se pudo registrar interacción", e);
@@ -152,6 +154,12 @@ function setupInteractions() {
     const btnLogout = document.getElementById('btn-header-logout');
     if (btnLogout) {
         btnLogout.onclick = () => {
+            // Reset recommendations immediately before clearing session
+            const recContainer = document.getElementById('recommendations-container');
+            if (recContainer) {
+                recContainer.style.display = 'none';
+                recContainer.innerHTML = '';
+            }
             currentRole = 'guest';
             currentClientId = null;
             isRegistered = false;
@@ -200,6 +208,13 @@ function setupInteractions() {
                 const data = await res.json();
 
                 if (data.status === 'ok') {
+                    // Reset recommendations immediately before loading data for the new account
+                    const recContainerLogin = document.getElementById('recommendations-container');
+                    if (recContainerLogin) {
+                        recContainerLogin.style.display = 'none';
+                        recContainerLogin.innerHTML = '';
+                    }
+
                     currentRole = data.role;
                     currentClientId = (data.role === 'cliente' || data.role === 'asesor') ? data.id : null;
                     isRegistered = (data.role === 'cliente');
@@ -1121,20 +1136,34 @@ async function fetchAuditoria() {
 }
 
 async function fetchRecommendations() {
-    if (!currentClientId) return;
+    const container = document.getElementById('recommendations-container');
+    if (!currentClientId || currentRole !== 'cliente') {
+        if (container) container.style.display = 'none';
+        return;
+    }
     try {
         const res = await fetch(`/api/recomendaciones?cli=${currentClientId}`);
         if (!res.ok) throw new Error("API error");
         const recs = await res.json();
         
-        const container = document.getElementById('recommendations-container');
         if (recs && recs.length > 0) {
-            container.style.display = 'block';
-            renderProperties(recs, 'rec-props');
+            if (container) {
+                container.style.display = 'block';
+                renderProperties(recs, 'rec-props');
+            }
         } else {
-            if (container) container.style.display = 'none';
+            if (container) {
+                container.style.display = 'none';
+                container.innerHTML = '';
+            }
         }
-    } catch (e) { console.error("Error fetching recommendations:", e); }
+    } catch (e) {
+        console.error("Error fetching recommendations:", e);
+        if (container) {
+            container.style.display = 'none';
+            container.innerHTML = '';
+        }
+    }
 }
 
 async function fetchData() {
@@ -1156,9 +1185,9 @@ async function fetchData() {
         renderStats(properties, clients, analitics);
         if (reports) renderReports(reports);
         
-        if (isRegistered || currentRole === 'cliente') {
-            await fetchRecommendations();
-            if (currentClientId) await fetchClienteData();
+        await fetchRecommendations();
+        if ((isRegistered || currentRole === 'cliente') && currentClientId) {
+            await fetchClienteData();
         }
 
         renderProperties(properties, 'featured-props');
@@ -1239,6 +1268,9 @@ function switchView(viewId) {
     }
     if (viewId === 'reportes') {
         loadReportes();
+    }
+    if (viewId === 'grafo') {
+        loadGrafo();
     }
 }
 
@@ -1495,7 +1527,7 @@ function showDetails(p) {
     const validPhotos = (p.fotos && p.fotos.length > 0) ? p.fotos.filter(f => f.length > 10) : [];
     const photos = validPhotos.length > 0 ? validPhotos : [backupPlaceholder];
 
-    logClientInteraction("Visualizó detalles del inmueble " + p.codigo);
+    logClientInteraction("Visualizó detalles del inmueble " + p.codigo, p.codigo);
 
     document.getElementById('detail-title').textContent = `${p.direccion} - ${p.ciudad}`;
     document.getElementById('detail-price').textContent = `$${p.precio.toLocaleString()}`;
@@ -2296,3 +2328,133 @@ async function loadReportes() {
         console.error('Error loading reportes', e);
     }
 }
+
+async function loadGrafo() {
+    try {
+        // 1. Hotspots
+        const resHotspots = await fetch('/api/grafo/hotspots');
+        const hotspots = await resHotspots.json();
+        const hotspotsList = document.getElementById('grafo-hotspots-list');
+        hotspotsList.innerHTML = '';
+        if (hotspots.length === 0) {
+            hotspotsList.innerHTML = '<p style="color:var(--text-muted); padding:10px;">No hay inmuebles con alta demanda registrados.</p>';
+        } else {
+            hotspots.forEach(h => {
+                hotspotsList.innerHTML += `
+                    <div style="background:var(--soft-blue); padding:12px; border-radius:6px; border-left:4px solid var(--primary-color); display:flex; justify-content:space-between; align-items:center; margin-bottom: 5px;">
+                        <div>
+                            <strong>${h.codigo}</strong> - ${h.tipo} en ${h.zona}<br>
+                            <span style="font-size:0.85rem; color:var(--text-muted);">${h.direccion}</span>
+                        </div>
+                        <span style="background:var(--primary-color); color:white; padding:4px 10px; border-radius:12px; font-weight:bold; font-size:0.85rem;">
+                            ${h.conexiones} conexiones
+                        </span>
+                    </div>
+                `;
+            });
+        }
+
+        // 2. Actividad de clientes (Grado)
+        const resClientes = await fetch('/api/grafo/clientes');
+        const clientes = await resClientes.json();
+        const clientesList = document.getElementById('grafo-clientes-list');
+        clientesList.innerHTML = '';
+        if (clientes.length === 0) {
+            clientesList.innerHTML = '<p style="color:var(--text-muted); padding:10px;">No hay actividad de clientes registrada.</p>';
+        } else {
+            clientes.forEach(c => {
+                clientesList.innerHTML += `
+                    <div style="background:#f8fafc; padding:10px; border-radius:6px; border:1px solid var(--border-color); display:flex; justify-content:space-between; align-items:center; margin-bottom: 5px;">
+                        <div>
+                            <strong>${c.nombre}</strong> (${c.id})<br>
+                            <span style="font-size:0.8rem; color:var(--text-muted);">${c.tipo}</span>
+                        </div>
+                        <span style="background:var(--soft-blue); color:var(--primary-color); padding:4px 8px; border-radius:12px; font-weight:600; font-size:0.8rem;">
+                            Grado: ${c.conexiones}
+                        </span>
+                    </div>
+                `;
+            });
+        }
+
+        // Populate selects for interactive analysis
+        const cliSelect = document.getElementById('grafo-cli-select');
+        cliSelect.innerHTML = '<option value="">Selecciona un cliente...</option>';
+        clientes.forEach(c => {
+            cliSelect.innerHTML += `<option value="${c.id}">${c.nombre} (${c.id})</option>`;
+        });
+
+        // For property select, use globalProperties
+        const inmSelect = document.getElementById('grafo-inm-select');
+        inmSelect.innerHTML = '<option value="">Selecciona un inmueble...</option>';
+        globalProperties.forEach(p => {
+            inmSelect.innerHTML += `<option value="${p.codigo}">${p.codigo} - ${p.tipo} en ${p.zona}</option>`;
+        });
+
+    } catch (e) {
+        console.error('Error al cargar datos del grafo:', e);
+    }
+}
+
+async function analyzeClientGraph() {
+    const cliId = document.getElementById('grafo-cli-select').value;
+    const resultDiv = document.getElementById('grafo-cli-result');
+    if (!cliId) {
+        resultDiv.style.display = 'none';
+        alert('Por favor selecciona un cliente');
+        return;
+    }
+    
+    try {
+        const res = await fetch(`/api/grafo/movilidad?cli=${encodeURIComponent(cliId)}`);
+        const reachable = await res.json();
+        
+        resultDiv.innerHTML = `
+            <h4 style="margin-top:0; margin-bottom:8px; color:var(--primary-color);">Nodos Alcanzables (BFS):</h4>
+            <div style="display:flex; flex-wrap:wrap; gap:6px;">
+                ${reachable.length === 0 ? '<span style="color:var(--text-muted); font-size:0.9rem;">No hay conexiones alcanzables desde este cliente.</span>' : 
+                  reachable.map(node => `<span style="background:var(--soft-blue); color:var(--primary-color); padding:3px 8px; border-radius:4px; font-size:0.85rem; font-weight:500;">${node}</span>`).join('')
+                }
+            </div>
+        `;
+        resultDiv.style.display = 'block';
+    } catch (e) {
+        console.error('Error al analizar movilidad:', e);
+        resultDiv.innerHTML = '<p style="color:var(--accent-color);">Error al realizar el análisis de movilidad.</p>';
+        resultDiv.style.display = 'block';
+    }
+}
+
+async function analyzePropertyGraph() {
+    const inmCod = document.getElementById('grafo-inm-select').value;
+    const resultDiv = document.getElementById('grafo-inm-result');
+    if (!inmCod) {
+        resultDiv.style.display = 'none';
+        alert('Por favor selecciona un inmueble');
+        return;
+    }
+    
+    try {
+        const res = await fetch(`/api/grafo/interes?cod=${encodeURIComponent(inmCod)}`);
+        const clients = await res.json();
+        
+        resultDiv.innerHTML = `
+            <h4 style="margin-top:0; margin-bottom:8px; color:var(--primary-color);">Clientes interesados:</h4>
+            <ul style="margin:0; padding-left:20px; font-size:0.9rem;">
+                ${clients.length === 0 ? '<li style="color:var(--text-muted); list-style-type:none; margin-left:-20px;">No hay clientes conectados a este inmueble.</li>' : 
+                  clients.map(c => `<li><strong>${c.nombre}</strong> (${c.id})</li>`).join('')
+                }
+            </ul>
+        `;
+        resultDiv.style.display = 'block';
+    } catch (e) {
+        console.error('Error al analizar interés:', e);
+        resultDiv.innerHTML = '<p style="color:var(--accent-color);">Error al consultar el mapa de interés.</p>';
+        resultDiv.style.display = 'block';
+    }
+}
+
+// Exponer las funciones globalmente para onclick en el HTML
+window.loadGrafo = loadGrafo;
+window.analyzeClientGraph = analyzeClientGraph;
+window.analyzePropertyGraph = analyzePropertyGraph;

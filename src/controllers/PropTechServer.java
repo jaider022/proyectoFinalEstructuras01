@@ -59,15 +59,22 @@ public class PropTechServer {
         server.createContext("/api/rankings", new RankingsHandler());
         server.createContext("/api/clientes/favoritos", new ClienteFavoritosHandler());
         server.createContext("/api/clientes/favoritos/add", new ClienteFavoritosAddHandler());
-        server.createContext("/api/clientes/preferencias/update", new ClientePreferenciasUpdateHandler());
+        server.createContext("/api/clientes/favoritos/remove", new ClienteFavoritosRemoveHandler());
         server.createContext("/api/clientes/visitas", new ClienteVisitasHandler());
         server.createContext("/api/clientes/interacciones", new ClienteInteraccionesHandler());
         server.createContext("/api/clientes/interaccion", new ClienteInteraccionAddHandler());
         server.createContext("/api/ia/predict", new IAPredictHandler());
-        server.createContext("/api/ia/sentiment", new IASentimentHandler());
         server.createContext("/api/ia/chat", new IAChatHandler());
+        server.createContext("/api/ia/sentiment", new IASentimentHandler());
+        server.createContext("/api/clientes/update-pref", new ClientePreferenciasUpdateHandler());
+        
+        // Graph Analysis Endpoints
+        server.createContext("/api/grafo/hotspots", new GrafoHotspotsHandler());
+        server.createContext("/api/grafo/clientes", new GrafoClientesHandler());
+        server.createContext("/api/grafo/movilidad", new GrafoMovilidadHandler());
+        server.createContext("/api/grafo/interes", new GrafoInteresHandler());
 
-        server.setExecutor(null);
+        server.setExecutor(null); // default executor;
         System.out.println("Servidor PropTech iniciado en http://localhost:" + port);
         server.start();
     }
@@ -380,6 +387,7 @@ public class PropTechServer {
                     Cliente c = sistema.buscarCliente(p.get("cli"));
                     if (c != null) {
                         c.registrarInteraccion("Agendó visita para el inmueble " + p.get("cod"));
+                        sistema.registrarInteraccionGrafo(p.get("cli"), p.get("cod"));
                     }
                     sendResponse(exchange, "{\"status\":\"ok\"}", 200);
                 } else {
@@ -584,6 +592,9 @@ public class PropTechServer {
         public void handle(HttpExchange exchange) throws IOException {
             java.util.Map<String, String> p = getQueryParams(exchange.getRequestURI().getQuery());
             boolean ok = sistema.confirmarVisita(p.get("cli"), p.get("cod"));
+            if (ok) {
+                sistema.registrarInteraccionGrafo(p.get("cli"), p.get("cod"));
+            }
             sendResponse(exchange, "{\"status\":\"" + (ok ? "ok" : "error") + "\"}", 200);
         }
     }
@@ -695,7 +706,10 @@ public class PropTechServer {
             java.util.Map<String, String> p = getQueryParams(exchange.getRequestURI().getQuery());
             sistema.agregarAFavoritos(p.get("cli"), p.get("cod"));
             Cliente c = sistema.buscarCliente(p.get("cli"));
-            if(c != null) c.registrarInteraccion("Añadió el inmueble " + p.get("cod") + " a favoritos");
+            if (c != null) {
+                c.registrarInteraccion("Añadió el inmueble " + p.get("cod") + " a favoritos");
+                sistema.registrarInteraccionGrafo(p.get("cli"), p.get("cod"));
+            }
             sendResponse(exchange, "{\"status\":\"ok\"}", 200);
         }
     }
@@ -757,9 +771,13 @@ public class PropTechServer {
             try {
                 String idCli = p.get("cli");
                 String accion = p.get("accion");
+                String codInm = p.get("cod");
                 Cliente c = sistema.buscarCliente(idCli);
                 if (c != null && accion != null && !accion.isEmpty()) {
                     c.registrarInteraccion(accion);
+                    if (codInm != null && !codInm.isEmpty() && !"null".equals(codInm)) {
+                        sistema.registrarInteraccionGrafo(idCli, codInm);
+                    }
                     sendResponse(exchange, "{\"status\":\"ok\"}", 200);
                 } else {
                     sendResponse(exchange, "{\"status\":\"error\", \"message\":\"Datos inválidos\"}", 400);
@@ -851,6 +869,112 @@ public class PropTechServer {
             } catch (Exception e) {
                 sendResponse(exchange, "{\"status\":\"error\", \"message\":\"" + e.getMessage() + "\"}", 400);
             }
+        }
+    }
+
+    class GrafoHotspotsHandler implements HttpHandler {
+        @Override
+        public void handle(HttpExchange exchange) throws IOException {
+            CustomList<String> hotspots = sistema.detectarHotspots(1); // Inmuebles con >= 1 conexiones
+            StringBuilder sb = new StringBuilder("[");
+            boolean first = true;
+            for (int i = 0; i < hotspots.getSize(); i++) {
+                String cod = hotspots.get(i);
+                Inmueble inm = sistema.buscarInmueble(cod);
+                if (inm != null) {
+                    if (!first) {
+                        sb.append(",");
+                    }
+                    first = false;
+                    sb.append(String.format(java.util.Locale.US, "{\"codigo\":\"%s\", \"direccion\":\"%s\", \"tipo\":\"%s\", \"zona\":\"%s\", \"precio\":%.2f, \"conexiones\":%d}",
+                        cod, inm.getDireccion(), inm.getTipo(), inm.getZona(), inm.getPrecio(), sistema.obtenerGradoNodo(cod)
+                    ));
+                }
+            }
+            sb.append("]");
+            exchange.getResponseHeaders().set("Content-Type", "application/json; charset=UTF-8");
+            sendResponse(exchange, sb.toString(), 200);
+        }
+    }
+
+    class GrafoClientesHandler implements HttpHandler {
+        @Override
+        public void handle(HttpExchange exchange) throws IOException {
+            CustomList<Cliente> clientes = sistema.obtenerClientesLista();
+            StringBuilder sb = new StringBuilder("[");
+            boolean first = true;
+            for (int i = 0; i < clientes.getSize(); i++) {
+                Cliente c = clientes.get(i);
+                if (c != null) {
+                    if (!first) {
+                        sb.append(",");
+                    }
+                    first = false;
+                    sb.append(String.format(java.util.Locale.US, "{\"id\":\"%s\", \"nombre\":\"%s\", \"tipo\":\"%s\", \"conexiones\":%d}",
+                        c.getIdentificacion(), c.getNombre(), c.getTipoCliente(), sistema.obtenerGradoNodo(c.getIdentificacion())
+                    ));
+                }
+            }
+            sb.append("]");
+            exchange.getResponseHeaders().set("Content-Type", "application/json; charset=UTF-8");
+            sendResponse(exchange, sb.toString(), 200);
+        }
+    }
+
+    class GrafoMovilidadHandler implements HttpHandler {
+        @Override
+        public void handle(HttpExchange exchange) throws IOException {
+            java.util.Map<String, String> p = getQueryParams(exchange.getRequestURI().getQuery());
+            String idCliente = p.get("cli");
+            if (idCliente == null) {
+                sendResponse(exchange, "{\"status\":\"error\", \"message\":\"Cliente requerido\"}", 400);
+                return;
+            }
+            
+            // Build JSON array of reachable nodes (excluding the client itself)
+            // Obtener los nodos alcanzables para el cliente
+            CustomList<String> nodos = sistema.analizarMovilidadComercial(idCliente);
+            java.util.List<String> nodeList = new java.util.ArrayList<>();
+            for (int i = 0; i < nodos.getSize(); i++) {
+                String n = nodos.get(i);
+                if (!n.equals(idCliente)) {
+                    nodeList.add("\"" + n + "\"");
+                }
+            }
+            String jsonArray = "[" + String.join(",", nodeList) + "]";
+            exchange.getResponseHeaders().set("Content-Type", "application/json; charset=UTF-8");
+            sendResponse(exchange, jsonArray, 200);
+
+        }
+    }
+
+    class GrafoInteresHandler implements HttpHandler {
+        @Override
+        public void handle(HttpExchange exchange) throws IOException {
+            java.util.Map<String, String> p = getQueryParams(exchange.getRequestURI().getQuery());
+            String codInmueble = p.get("cod");
+            if (codInmueble == null) {
+                sendResponse(exchange, "{\"status\":\"error\", \"message\":\"Inmueble requerido\"}", 400);
+                return;
+            }
+            
+            CustomList<String> clientesIds = sistema.obtenerClientesConInteresComun(codInmueble);
+            StringBuilder sb = new StringBuilder("[");
+            boolean first = true;
+            for (int i = 0; i < clientesIds.getSize(); i++) {
+                String id = clientesIds.get(i);
+                Cliente c = sistema.buscarCliente(id);
+                if (c != null) {
+                    if (!first) {
+                        sb.append(",");
+                    }
+                    first = false;
+                    sb.append(String.format(java.util.Locale.US, "{\"id\":\"%s\", \"nombre\":\"%s\"}", id, c.getNombre()));
+                }
+            }
+            sb.append("]");
+            exchange.getResponseHeaders().set("Content-Type", "application/json; charset=UTF-8");
+            sendResponse(exchange, sb.toString(), 200);
         }
     }
 }

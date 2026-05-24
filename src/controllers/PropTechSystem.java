@@ -870,6 +870,12 @@ public class PropTechSystem {
 
     // --- GRAFOS: ANÁLISIS (REQ 5.7) ---
 
+    public void registrarInteraccionGrafo(String idCliente, String codInmueble) {
+        if (buscarCliente(idCliente) != null && buscarInmueble(codInmueble) != null) {
+            grafoRelaciones.addEdge(idCliente, codInmueble);
+        }
+    }
+
     /** Cuántas conexiones tiene un nodo en el grafo (popularidad). */
     public int obtenerGradoNodo(String nodeId) {
         return grafoRelaciones.getDegree(nodeId);
