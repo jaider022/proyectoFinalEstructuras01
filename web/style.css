@@ -1070,3 +1070,31 @@ select {
     to { opacity: 0; transform: scale(0.95); }
 }
 
+/* Limit the screen space occupied by suggested properties when searching for recommendations */
+#manual-recommendations-results {
+    max-height: 480px;
+    overflow-y: auto;
+    padding: 10px;
+    border-radius: 12px;
+    background: rgba(248, 250, 252, 0.5);
+    border: 1px solid var(--border-color);
+}
+
+/* Scrollbar styling for recommendation results */
+#manual-recommendations-results::-webkit-scrollbar {
+    width: 6px;
+}
+
+#manual-recommendations-results::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+#manual-recommendations-results::-webkit-scrollbar-thumb {
+    background: rgba(79, 70, 229, 0.25);
+    border-radius: 4px;
+}
+
+#manual-recommendations-results::-webkit-scrollbar-thumb:hover {
+    background: rgba(79, 70, 229, 0.45);
+}
+

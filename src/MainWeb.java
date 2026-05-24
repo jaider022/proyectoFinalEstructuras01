@@ -55,12 +55,54 @@ public class MainWeb {
                         cargarFotos(inm6, "APARTAMENTOS", "D", 6);
                         inm6.setAsesorResponsable(juan);
 
+                        Inmueble inm7 = new Inmueble("INM-07", "Calle 145 #12", "Bogotá", "Norte", "Casa", "Venta",
+                                        780000.0, 180, 250,
+                                        4, 3, "Nuevo", "Disponible");
+                        cargarFotos(inm7, "CASAS", "B", 6);
+                        inm7.setAsesorResponsable(maria);
+
+                        Inmueble inm8 = new Inmueble("INM-08", "Carrera 13 #58", "Bogotá", "Chapinero", "Apartamento",
+                                        "Arriendo", 3200.0, 75,
+                                        0, 2, 2, "Usado", "Disponible");
+                        cargarFotos(inm8, "APARTAMENTOS", "E", 6);
+                        inm8.setAsesorResponsable(juan);
+
+                        Inmueble inm9 = new Inmueble("INM-09", "Calle 72 #10", "Bogotá", "Chapinero", "Oficina",
+                                        "Arriendo", 4800.0, 90,
+                                        0, 0, 2, "Nuevo", "Disponible");
+                        cargarFotos(inm9, "OFICINAS", "B", 4);
+                        inm9.setAsesorResponsable(juan);
+
+                        Inmueble inm10 = new Inmueble("INM-10", "Calle 134 #50", "Bogotá", "Colina", "Apartamento",
+                                        "Venta", 520000.0, 110,
+                                        0, 3, 2, "Remodelado", "Disponible");
+                        cargarFotos(inm10, "APARTAMENTOS", "F", 6);
+                        inm10.setAsesorResponsable(laura);
+
+                        Inmueble inm11 = new Inmueble("INM-11", "Carrera 9 #170", "Bogotá", "Norte", "Lote",
+                                        "Venta", 980000.0, 600,
+                                        600, 0, 0, "Sobre planos", "Disponible");
+                        cargarFotos(inm11, "LOTES", "A", 3);
+                        inm11.setAsesorResponsable(maria);
+
+                        Inmueble inm12 = new Inmueble("INM-12", "Calle 153 #55", "Bogotá", "Colina", "Casa",
+                                        "Venta", 640000.0, 160,
+                                        200, 3, 2, "Usado", "Disponible");
+                        cargarFotos(inm12, "CASAS", "C", 6);
+                        inm12.setAsesorResponsable(laura);
+
                         sistema.registrarInmueble(inm1);
                         sistema.registrarInmueble(inm2);
                         sistema.registrarInmueble(inm3);
                         sistema.registrarInmueble(inm4);
                         sistema.registrarInmueble(inm5);
                         sistema.registrarInmueble(inm6);
+                        sistema.registrarInmueble(inm7);
+                        sistema.registrarInmueble(inm8);
+                        sistema.registrarInmueble(inm9);
+                        sistema.registrarInmueble(inm10);
+                        sistema.registrarInmueble(inm11);
+                        sistema.registrarInmueble(inm12);
 
                         Cliente c1 = new Cliente("C-01", "Jaider Admin", "jaider@proptech.com", "311", "Comprador",
                                         1000000.0, "Norte",

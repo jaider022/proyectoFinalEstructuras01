@@ -492,6 +492,10 @@ function setupInteractions() {
             return;
         }
 
+        const todayStr = new Date().toISOString().split('T')[0];
+        const scheduleDateInput = document.getElementById('schedule-date');
+        if (scheduleDateInput) scheduleDateInput.min = todayStr;
+
         // Mostrar selector de cliente si es admin/asesor
         const clientGroup = document.getElementById('schedule-client-group');
         if (currentRole === 'admin' || currentRole === 'asesor') {
@@ -541,6 +545,19 @@ function setupInteractions() {
     document.getElementById('form-schedule').onsubmit = async (e) => {
         e.preventDefault();
         const fd = new FormData(e.target);
+        
+        // Validar que la fecha y hora no sean del pasado
+        const dateVal = fd.get('fec');
+        const timeVal = fd.get('hor');
+        if (dateVal && timeVal) {
+            const scheduledDateTime = new Date(`${dateVal}T${timeVal}`);
+            const now = new Date();
+            if (scheduledDateTime < now) {
+                alert('No se permite agendar citas en fechas o horas anteriores a la actual.');
+                return;
+            }
+        }
+
         const params = new URLSearchParams(fd);
         
         // Determinar el ID del cliente
@@ -791,7 +808,7 @@ function setupInteractions() {
             const params = new URLSearchParams(fd).toString();
             const resultsDiv = document.getElementById('manual-recommendations-results');
             if (resultsDiv) {
-                resultsDiv.style.display = 'block';
+                resultsDiv.style.display = 'grid';
                 resultsDiv.innerHTML = '<p style="color:var(--text-muted)">Buscando inmuebles...</p>';
             }
             try {
@@ -930,6 +947,19 @@ function setupInteractions() {
         formReprogram.onsubmit = async (e) => {
             e.preventDefault();
             const fd = new FormData(e.target);
+
+            // Validar que la fecha y hora no sean del pasado
+            const dateVal = fd.get('fec');
+            const timeVal = fd.get('hor');
+            if (dateVal && timeVal) {
+                const scheduledDateTime = new Date(`${dateVal}T${timeVal}`);
+                const now = new Date();
+                if (scheduledDateTime < now) {
+                    alert('No se permite reprogramar citas en fechas o horas anteriores a la actual.');
+                    return;
+                }
+            }
+
             const params = new URLSearchParams(fd).toString();
             try {
                 const res = await fetch(`/api/visitas/reprogramar?${params}`);
@@ -1383,17 +1413,45 @@ function renderStats(props, clients, analitics) {
 }
 
 function renderReports(reports) {
-    const aCard = document.getElementById('analytics-card');
-    if (aCard && reports) {
-        let zonesHtml = reports.zonas.map(z => `<li><strong>${z.zona}:</strong> ${z.visitas} visitas</li>`).join('');
-        aCard.innerHTML += `
-            <div style="margin-top: 20px; border-top: 1px solid #eee; padding-top: 15px;">
-                <h4>Actividad por Zonas (Reporte 6.10)</h4>
-                <ul style="list-style: none; padding: 0; font-size: 0.9rem;">
-                    ${zonesHtml || '<li>No hay actividad registrada en zonas aún.</li>'}
-                </ul>
-            </div>
-        `;
+    if (!reports) return;
+
+    const rtc = document.getElementById('rep-total-cierres');
+    if (rtc) rtc.innerText = reports.cierres || 0;
+
+    const zl = document.getElementById('rep-zonas-list');
+    if (zl) {
+        zl.innerHTML = '';
+        if (reports.zonas && reports.zonas.length > 0) {
+            reports.zonas.forEach(z => {
+                zl.innerHTML += `<li><span style='font-weight:bold'>${z.zona}:</span> ${z.visitas} visitas registradas</span></li>`;
+            });
+        } else {
+            zl.innerHTML = '<li>No hay actividad registrada en zonas aún.</li>';
+        }
+    }
+
+    const vl = document.getElementById('rep-visitas-list');
+    if (vl) {
+        vl.innerHTML = '';
+        if (reports.visitas && reports.visitas.length > 0) {
+            reports.visitas.forEach(v => {
+                vl.innerHTML += `<li><span style='font-weight:bold'>${v.codigo}:</span> ${v.visitas} visitas registradas</span></li>`;
+            });
+        } else {
+            vl.innerHTML = '<li>No hay visitas registradas aún.</li>';
+        }
+    }
+
+    const pl = document.getElementById('rep-precio-list');
+    if (pl) {
+        pl.innerHTML = '';
+        if (reports.catalogo && reports.catalogo.length > 0) {
+            reports.catalogo.forEach(c => {
+                pl.innerHTML += `<tr style='border-bottom: 1px solid var(--border-color);'><td style='padding: 10px;'>${c.codigo}</td><td style='padding: 10px;'>${c.tipo}</td><td style='padding: 10px;'>${c.zona}</td><td style='padding: 10px; text-align: right; font-weight: 500;'>$${c.precio.toLocaleString()}</td></tr>`;
+            });
+        } else {
+            pl.innerHTML = '<tr><td colspan="4" style="padding:10px; text-align:center; color:var(--text-muted);">No hay inmuebles en el catálogo.</td></tr>';
+        }
     }
 }
 
@@ -2207,6 +2265,10 @@ window.openReprogramModal = (codInmueble, manualClientId = null) => {
         return;
     }
 
+    const todayStr = new Date().toISOString().split('T')[0];
+    const reprogramDateInput = document.getElementById('reprogram-date');
+    if (reprogramDateInput) reprogramDateInput.min = todayStr;
+
     document.getElementById('modal-reprogram').style.display = 'flex';
     document.getElementById('reprogram-cli').value = cliId;
     document.getElementById('reprogram-cod').value = codInmueble;
@@ -2341,26 +2403,7 @@ async function loadReportes() {
     try {
         const res = await fetch('/api/reportes');
         const data = await res.json();
-        
-        document.getElementById('rep-total-cierres').innerText = data.cierres;
-        
-        const zl = document.getElementById('rep-zonas-list');
-        zl.innerHTML = '';
-        data.zonas.forEach(z => {
-            zl.innerHTML += `<li><span style='font-weight:bold'>${z.zona}:</span> ${z.visitas} operaciones cerradas</span></li>`;
-        });
-        
-        const vl = document.getElementById('rep-visitas-list');
-        vl.innerHTML = '';
-        data.visitas.forEach(v => {
-            vl.innerHTML += `<li><span style='font-weight:bold'>${v.codigo}:</span> ${v.visitas} visitas registradas</span></li>`;
-        });
-        
-        const pl = document.getElementById('rep-precio-list');
-        pl.innerHTML = '';
-        data.catalogo.forEach(c => {
-            pl.innerHTML += `<tr style='border-bottom: 1px solid var(--border-color);'><td style='padding: 10px;'>${c.codigo}</td><td style='padding: 10px;'>${c.tipo}</td><td style='padding: 10px;'>${c.zona}</td><td style='padding: 10px; text-align: right; font-weight: 500;'>$${c.precio.toLocaleString()}</td></tr>`;
-        });
+        renderReports(data);
     } catch(e) {
         console.error('Error loading reportes', e);
     }

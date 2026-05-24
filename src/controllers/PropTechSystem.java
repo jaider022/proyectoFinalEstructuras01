@@ -168,6 +168,19 @@ public class PropTechSystem {
 
         // Verifico que todos los datos sean válidos antes de procesar
         if (c != null && i != null && a != null) {
+            // Validar que la fecha y hora no sean del pasado
+            try {
+                java.time.LocalDate datePart = java.time.LocalDate.parse(fecha);
+                java.time.LocalTime timePart = java.time.LocalTime.parse(hora);
+                java.time.LocalDateTime appointmentTime = java.time.LocalDateTime.of(datePart, timePart);
+                if (appointmentTime.isBefore(java.time.LocalDateTime.now())) {
+                    historialAdministrativo.push("RECHAZO: Intento de agendar en fecha/hora pasada: " + fecha + " " + hora);
+                    return false;
+                }
+            } catch (Exception e) {
+                return false;
+            }
+
             // REQUERIMIENTO: Solo agendar si el inmueble está Disponible
             if (!"Disponible".equalsIgnoreCase(i.getDisponibilidad())) {
                 historialAdministrativo.push("RECHAZO: Intento de agenda en inmueble no disponible: " + codInmueble);
@@ -218,6 +231,19 @@ public class PropTechSystem {
     }
 
     public boolean reprogramarVisita(String idCliente, String codInmueble, String nuevaFecha, String nuevaHora) {
+        // Validar que la fecha y hora no sean del pasado
+        try {
+            java.time.LocalDate datePart = java.time.LocalDate.parse(nuevaFecha);
+            java.time.LocalTime timePart = java.time.LocalTime.parse(nuevaHora);
+            java.time.LocalDateTime appointmentTime = java.time.LocalDateTime.of(datePart, timePart);
+            if (appointmentTime.isBefore(java.time.LocalDateTime.now())) {
+                historialAdministrativo.push("RECHAZO: Intento de reprogramar en fecha/hora pasada: " + nuevaFecha + " " + nuevaHora);
+                return false;
+            }
+        } catch (Exception e) {
+            return false;
+        }
+
         CustomList<Asesor> todosAsesores = tablaAsesores.toList();
         for (int j = 0; j < todosAsesores.getSize(); j++) {
             Asesor a = todosAsesores.get(j);
