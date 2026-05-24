@@ -26,6 +26,53 @@ function clearSession() {
     localStorage.removeItem('proptech_role');
     localStorage.removeItem('proptech_clientId');
     localStorage.removeItem('proptech_isRegistered');
+    resetClientDashboardUI();
+}
+
+function resetClientDashboardUI() {
+    // 1. Automatic recommendations container
+    const recContainer = document.getElementById('recommendations-container');
+    if (recContainer) {
+        recContainer.style.display = 'none';
+        recContainer.innerHTML = '';
+    }
+
+    // 2. Manual recommendations results container
+    const manualRecsResults = document.getElementById('manual-recommendations-results');
+    if (manualRecsResults) {
+        manualRecsResults.style.display = 'none';
+        manualRecsResults.innerHTML = '';
+    }
+
+    // 3. Manual recomendador form
+    const manualForm = document.getElementById('form-recomendador-manual');
+    if (manualForm) {
+        manualForm.reset();
+    }
+
+    // 4. Update preferences form
+    const prefForm = document.getElementById('form-update-preferences');
+    if (prefForm) {
+        prefForm.reset();
+    }
+
+    // 5. Client Favorites grid
+    const favsGrid = document.getElementById('cliente-favs-grid');
+    if (favsGrid) {
+        favsGrid.innerHTML = '';
+    }
+
+    // 6. Client Visits list
+    const visitsList = document.getElementById('cliente-visits-list');
+    if (visitsList) {
+        visitsList.innerHTML = '';
+    }
+
+    // 7. Welcome badge
+    const welcomeBadge = document.getElementById('cliente-welcome-badge');
+    if (welcomeBadge) {
+        welcomeBadge.textContent = 'Bienvenido';
+    }
 }
 
 function showNotification(title, message, type = 'info') {
@@ -154,16 +201,10 @@ function setupInteractions() {
     const btnLogout = document.getElementById('btn-header-logout');
     if (btnLogout) {
         btnLogout.onclick = () => {
-            // Reset recommendations immediately before clearing session
-            const recContainer = document.getElementById('recommendations-container');
-            if (recContainer) {
-                recContainer.style.display = 'none';
-                recContainer.innerHTML = '';
-            }
             currentRole = 'guest';
             currentClientId = null;
             isRegistered = false;
-            clearSession(); // Limpiar persistencia
+            clearSession(); // Limpiar persistencia y resetear UI
             fetchData();
             switchView('dashboard');
             document.getElementById('landing-view').style.display = 'flex';
@@ -208,12 +249,8 @@ function setupInteractions() {
                 const data = await res.json();
 
                 if (data.status === 'ok') {
-                    // Reset recommendations immediately before loading data for the new account
-                    const recContainerLogin = document.getElementById('recommendations-container');
-                    if (recContainerLogin) {
-                        recContainerLogin.style.display = 'none';
-                        recContainerLogin.innerHTML = '';
-                    }
+                    // Reset client dashboard UI immediately before loading data for the new account
+                    resetClientDashboardUI();
 
                     currentRole = data.role;
                     currentClientId = (data.role === 'cliente' || data.role === 'asesor') ? data.id : null;
