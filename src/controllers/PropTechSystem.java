@@ -1166,7 +1166,57 @@ public class PropTechSystem {
         return zonas;
     }
 
+    private int calcularPrioridadCliente(Cliente c) {
+        if ("Exitoso".equalsIgnoreCase(c.getEstadoBusqueda()) && !"Inversor".equalsIgnoreCase(c.getTipoCliente())) {
+            return 0;
+        }
+        if ("Inactivo".equalsIgnoreCase(c.getEstadoBusqueda())) {
+            return 0;
+        }
+
+        int score = 1; // Puntuación base
+
+        // 1. Visitas agendadas activas (Pendiente, Confirmada, Reprogramada)
+        CustomList<Visita> visitas = c.getHistorialVisitas();
+        boolean tieneVisitasActivas = false;
+        for (int i = 0; i < visitas.getSize(); i++) {
+            String est = visitas.get(i).getEstado();
+            if ("Pendiente".equalsIgnoreCase(est) || "Confirmada".equalsIgnoreCase(est) || "Reprogramada".equalsIgnoreCase(est)) {
+                tieneVisitasActivas = true;
+                break;
+            }
+        }
+        if (tieneVisitasActivas) {
+            score += 2;
+        }
+
+        // 2. Favoritos guardados
+        if (c.getFavoritos().getSize() >= 2) {
+            score += 1;
+        }
+
+        // 3. Nivel de interacciones (Actividad en la plataforma)
+        if (c.getHistorialInteracciones().getSize() >= 5) {
+            score += 1;
+        }
+
+        return Math.min(score, 5);
+    }
+
+    public void actualizarClientesAltaProbabilidad() {
+        this.colaClientesInteres = new CustomPriorityQueue<>(50);
+        CustomList<Cliente> todosClientes = tablaClientes.toList();
+        for (int i = 0; i < todosClientes.getSize(); i++) {
+            Cliente c = todosClientes.get(i);
+            int prioridad = calcularPrioridadCliente(c);
+            if (prioridad > 0) {
+                colaClientesInteres.enqueue(c, prioridad);
+            }
+        }
+    }
+
     public CustomList<Cliente> obtenerClientesAltaProbabilidad() {
+        actualizarClientesAltaProbabilidad();
         return colaClientesInteres.toList();
     }
 
