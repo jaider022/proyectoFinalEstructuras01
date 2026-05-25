@@ -16,20 +16,21 @@ public class AsistenteVirtual {
         String textoLimpio = mensaje.toLowerCase();
         
         // 1. Intención: Buscar propiedades
-        if (textoLimpio.contains("buscar") || textoLimpio.contains("quiero") || textoLimpio.contains("necesito") || textoLimpio.contains("muéstrame") || textoLimpio.contains("busco")) {
+        if (textoLimpio.contains("buscar") || textoLimpio.contains("buscando") || textoLimpio.contains("buscado") || textoLimpio.contains("quiero") || textoLimpio.contains("necesito") || textoLimpio.contains("muéstrame") || textoLimpio.contains("busco")) {
             
             String tipoBuscado = "Todos";
-            if (textoLimpio.contains("apartamento") || textoLimpio.contains("apto")) tipoBuscado = "Apartamento";
-            else if (textoLimpio.contains("casa")) tipoBuscado = "Casa";
-            else if (textoLimpio.contains("oficina")) tipoBuscado = "Oficina";
+            if (textoLimpio.contains("apto") || textoLimpio.contains("partam") || textoLimpio.contains("apartam") || textoLimpio.contains("aparta") || textoLimpio.contains("depa")) tipoBuscado = "Apartamento";
+            else if (textoLimpio.contains("casa") || textoLimpio.contains("casita")) tipoBuscado = "Casa";
+            else if (textoLimpio.contains("oficina") || textoLimpio.contains("ofic")) tipoBuscado = "Oficina";
             else if (textoLimpio.contains("local")) tipoBuscado = "Local Comercial";
 
             int habBuscadas = 0;
-            // Detección simple de números
-            if (textoLimpio.contains("1 hab") || textoLimpio.contains("una hab") || textoLimpio.contains("1 alcoba")) habBuscadas = 1;
-            if (textoLimpio.contains("2 hab") || textoLimpio.contains("dos hab") || textoLimpio.contains("2 alcoba") || textoLimpio.contains("dos alcoba")) habBuscadas = 2;
-            if (textoLimpio.contains("3 hab") || textoLimpio.contains("tres hab") || textoLimpio.contains("3 alcoba") || textoLimpio.contains("tres alcoba") || textoLimpio.contains("3 habitacione")) habBuscadas = 3;
-            if (textoLimpio.contains("4 hab") || textoLimpio.contains("cuatro hab") || textoLimpio.contains("4 alcoba")) habBuscadas = 4;
+            // Detección mejorada de números con expresiones regulares
+            if (textoLimpio.matches(".*\\b(1|un|una)\\s*(hab|alc|cuar|piez).*")) habBuscadas = 1;
+            if (textoLimpio.matches(".*\\b(2|dos)\\s*(hab|alc|cuar|piez).*")) habBuscadas = 2;
+            if (textoLimpio.matches(".*\\b(3|tres)\\s*(hab|alc|cuar|piez).*")) habBuscadas = 3;
+            if (textoLimpio.matches(".*\\b(4|cuatro)\\s*(hab|alc|cuar|piez).*")) habBuscadas = 4;
+            if (textoLimpio.matches(".*\\b(5|cinco)\\s*(hab|alc|cuar|piez).*")) habBuscadas = 5;
 
             String finalidad = "Todos";
             if (textoLimpio.contains("arriendo") || textoLimpio.contains("alquilar") || textoLimpio.contains("rentar")) finalidad = "Arriendo";

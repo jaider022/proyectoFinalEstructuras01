@@ -838,7 +838,7 @@ function setupInteractions() {
             const fd = new FormData(formUpdatePref);
             const params = new URLSearchParams(fd).toString();
             try {
-                const res = await fetch(`/api/clientes/preferencias/update?id=${currentClientId}&${params}`);
+                const res = await fetch(`/api/clientes/update-pref?id=${currentClientId}&${params}`);
                 const result = await res.json();
                 if (result.status === 'ok') {
                     showNotification('Preferencias actualizadas', 'Tus recomendaciones se han actualizado', 'success');
