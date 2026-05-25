@@ -254,6 +254,7 @@ header {
 }
 
 .property-card {
+    position: relative;
     background: white;
     border-radius: var(--radius);
     overflow: hidden;
