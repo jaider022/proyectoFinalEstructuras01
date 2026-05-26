@@ -29,19 +29,17 @@ public class AsistenteVirtual {
         String textoLimpio = normalizar(textoOriginal);
         
         // 1. Intención: Buscar propiedades
+        // Usamos expresiones regulares con \b para buscar palabras completas y evitar que "volver" active "ver"
         boolean tieneIntencionBuscar = 
-            textoLimpio.contains("buscar") || textoLimpio.contains("bucar") || textoLimpio.contains("busacar") ||
-            textoLimpio.contains("busco") || textoLimpio.contains("busq") ||
-            textoLimpio.contains("quiero") || textoLimpio.contains("kiero") || textoLimpio.contains("qiero") ||
-            textoLimpio.contains("necesito") || textoLimpio.contains("nesesito") || textoLimpio.contains("nececito") || textoLimpio.contains("nesecito") ||
-            textoLimpio.contains("muestrame") || textoLimpio.contains("mostrar") || 
-            textoLimpio.contains("ver") || textoLimpio.contains("ensename") || 
-            textoLimpio.contains("encuentra") || textoLimpio.contains("lista") || 
-            textoLimpio.contains("apartamento") || textoLimpio.contains("apto") || textoLimpio.contains("apartameto") || textoLimpio.contains("aprtamento") ||
-            textoLimpio.contains("casa") || textoLimpio.contains("caza") ||
-            textoLimpio.contains("oficina") || 
-            textoLimpio.contains("local") || 
-            textoLimpio.contains("lote");
+            textoLimpio.matches(".*\\b(buscar|bucar|busacar|busco|busq|muestrame|mostrar|ensename|encuentra|lista|listado|catalogo|inventario)\\b.*") ||
+            textoLimpio.matches(".*\\b(apartamento|apto|apartameto|aprtamento|casa|caza|oficina|local|lote)\\b.*");
+            
+        // Si tiene palabras como "quiero" o "necesito", solo es búsqueda si también menciona una propiedad
+        if (!tieneIntencionBuscar && textoLimpio.matches(".*\\b(quiero|kiero|qiero|necesito|nesesito|nececito|nesecito|ver)\\b.*")) {
+            if (textoLimpio.matches(".*\\b(apartamento|apto|casa|oficina|local|lote|propiedad|inmueble)\\b.*")) {
+                tieneIntencionBuscar = true;
+            }
+        }
 
         if (tieneIntencionBuscar) {
             String tipoBuscado = "Todos";
@@ -132,14 +130,32 @@ public class AsistenteVirtual {
         }
 
         // 3. Respuestas Generales y Saludos Personalizados
-        if (textoLimpio.contains("hola") || textoLimpio.contains("saludos") || textoLimpio.contains("buenas")) {
+        if (textoLimpio.matches(".*\\b(hola|saludos|buenas|buenos dias|buenas tardes|buenas noches|buen dia|que tal|quiubo|holis)\\b.*")) {
             String saludoPers = "¡Hola!";
             if (rol.equals("admin")) saludoPers = "¡Hola Jefe/Administrador!";
             else if (rol.equals("asesor")) saludoPers = "¡Hola Colega Asesor!";
             else if (rol.equals("cliente")) saludoPers = "¡Hola! Que gusto tenerte por aqui como nuestro Cliente.";
             else if (rol.equals("guest")) saludoPers = "¡Hola Invitado!";
 
-            return new RespuestaChat(saludoPers + " Soy tu Asistente Inteligente. Puedo ayudarte a buscar propiedades. Prueba escribiendo: 'Ayudame a buscar un apartamento de 3 habitaciones'.", null);
+            if (textoLimpio.length() <= 15) {
+                return new RespuestaChat(saludoPers + " ¿En qué te puedo ayudar hoy? Dime qué tipo de propiedad estás buscando.", null);
+            } else if (!textoLimpio.contains("como estas") && !textoLimpio.contains("como te sientes") && !textoLimpio.contains("como te va")) {
+                return new RespuestaChat(saludoPers + " Soy tu Asistente Inteligente. Puedo ayudarte a buscar propiedades. Prueba escribiendo: 'Ayudame a buscar un apartamento de 3 habitaciones'.", null);
+            }
+        }
+
+        // 3.5. Razonamiento Conversacional (Small Talk) sobre cómo está la IA
+        if (textoLimpio.contains("como estas") || textoLimpio.contains("como te sientes") || textoLimpio.contains("como te va") || textoLimpio.contains("que cuentas")) {
+            // Respuestas simulando razonamiento natural y empatía
+            String[] respuestasHumanas = {
+                "¡Estoy muy bien, gracias por preguntar! Un poco ocupada analizando el mercado inmobiliario, pero siempre con energía para ayudarte. ¿Cómo ha estado tu día?",
+                "Me encuentro excelente. Es un gran día para encontrar buenas oportunidades de inversión. ¿En qué te puedo colaborar hoy?",
+                "¡Súper bien! La verdad me alegra mucho que preguntes. Siempre estoy aquí procesando datos, pero charlar contigo lo hace más interesante. ¿Buscamos alguna propiedad?",
+                "Todo marchando de maravilla por aquí en el mundo digital. Tratando de aprender más cada día para darte mejores recomendaciones. ¿Qué tienes en mente hoy?"
+            };
+            // Elegir una respuesta semi-aleatoria basada en la longitud del texto o aleatoriedad simple
+            int index = (int)(Math.random() * respuestasHumanas.length);
+            return new RespuestaChat(respuestasHumanas[index], null);
         }
 
         // 4. Respuestas exclusivas por Rol
@@ -164,6 +180,15 @@ public class AsistenteVirtual {
         // 7. Despedidas
         if (textoLimpio.contains("adios") || textoLimpio.contains("chao") || textoLimpio.contains("hasta luego") || textoLimpio.contains("nos vemos") || textoLimpio.contains("bye")) {
             return new RespuestaChat("¡Hasta luego! Vuelve pronto si necesitas ayuda buscando tu inmueble ideal.", null);
+        }
+
+        // 8. Consultas sobre Asesores y Citas
+        if (textoLimpio.contains("asesor") || textoLimpio.contains("citas") || textoLimpio.contains("agentes")) {
+            if (rol.equals("admin")) {
+                return new RespuestaChat("Actualmente tenemos un equipo de asesores activos cubriendo diferentes zonas. Como administrador, puedes ver su rendimiento en el panel de Analítica y gestionar sus asignaciones.", null);
+            } else {
+                return new RespuestaChat("Nuestro equipo de asesores está disponible para acompañarte en tu proceso. Una vez encuentres la propiedad que te gusta, puedes agendar una cita y un asesor te guiará.", null);
+            }
         }
 
         return new RespuestaChat("No estoy seguro de entenderte por completo. Recuerda que soy un asistente inmobiliario, intenta decirme: 'Quiero comprar una casa de 2 habitaciones en el norte'.", null);
