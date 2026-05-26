@@ -1193,6 +1193,12 @@ function applyRoleRestrictions() {
         document.querySelectorAll('.cliente-only').forEach(el => el.style.display = 'none');
         commercialElements.forEach(el => el.style.display = 'none');
         
+        guestOnlyElements.forEach(el => {
+            if (el.tagName === 'LI') el.style.display = 'block';
+            else el.style.display = 'inline-block';
+        });
+        loggedInElements.forEach(el => el.style.display = 'none');
+        
         const fabAdmin = document.getElementById('fab-admin');
         if (fabAdmin) fabAdmin.style.display = 'none';
         deleteBtns.forEach(el => el.classList.remove('admin-visible'));

@@ -16,6 +16,7 @@ public class Cliente {
     private int minHabitaciones;
     private String estadoBusqueda; // Activo, Inactivo, Exitoso
     private String fechaUltimoSeguimiento;
+    private String clave;
     
     // Aquí conectamos la estructura que programamos a mano
     private CustomList<Inmueble> favoritos; 
@@ -46,6 +47,7 @@ public class Cliente {
         this.negociados = new CustomList<>();
         this.historialVisitas = new CustomList<>();
         this.historialInteracciones = new CustomStack<>();
+        this.clave = "123"; // Default password
     }
 
     public CustomList<Inmueble> getFavoritos() { return favoritos; }
@@ -100,6 +102,9 @@ public class Cliente {
 
     public String getFechaUltimoSeguimiento() { return fechaUltimoSeguimiento; }
     public void setFechaUltimoSeguimiento(String f) { this.fechaUltimoSeguimiento = f; }
+    
+    public String getClave() { return clave; }
+    public void setClave(String clave) { this.clave = clave; }
 
     private boolean validarEstadoBusqueda(String e) {
         if (e == null) return false;

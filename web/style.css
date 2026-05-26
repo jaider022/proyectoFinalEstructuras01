@@ -846,12 +846,12 @@ select {
     border-radius: 8px !important;
 }
 
-.landing-logo svg, .logo svg {
+.landing-logo svg, .logo svg, .landing-logo img, .logo img {
     filter: drop-shadow(0 4px 6px rgba(79, 70, 229, 0.15));
     transition: transform 0.3s ease;
 }
 
-.landing-logo:hover svg, .logo:hover svg {
+.landing-logo:hover svg, .logo:hover svg, .landing-logo:hover img, .logo:hover img {
     transform: rotate(5deg) scale(1.05);
 }
 

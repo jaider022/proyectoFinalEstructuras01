@@ -369,9 +369,11 @@ public class PropTechServer {
                 String zon = (p.get("zon") != null && !p.get("zon").trim().isEmpty()) ? p.get("zon").trim() : "Cualquiera";
                 String itm = (p.get("itm") != null && !p.get("itm").trim().isEmpty()) ? p.get("itm").trim() : "Cualquiera";
                 String estBusq = p.get("estBusq") != null ? p.get("estBusq") : "Activo";
+                String pwd = p.get("pwd") != null && !p.get("pwd").trim().isEmpty() ? p.get("pwd").trim() : "123";
 
                 Cliente c = new Cliente(p.get("id"), p.get("nom"), p.get("cor"), p.get("tel"), p.get("tip"), 
                     pre, zon, itm, minHab, estBusq);
+                c.setClave(pwd);
                 sistema.registrarCliente(c);
                 sendResponse(exchange, "{\"status\":\"ok\"}", 200);
             } catch (Exception e) {
@@ -456,9 +458,14 @@ public class PropTechServer {
                 // 3. Verificar si es Cliente
                 else if (id != null && sistema.buscarCliente(id) != null) {
                     Cliente c = sistema.buscarCliente(id);
-                    c.registrarInteraccion("Inició sesión en la plataforma");
-                    response = String.format("{\"status\":\"ok\", \"role\":\"cliente\", \"id\":\"%s\", \"data\":%s}", 
-                        id, JsonUtil.clienteToJson(c));
+                    if (c.getClave() != null && c.getClave().equals(pwd)) {
+                        c.registrarInteraccion("Inició sesión en la plataforma");
+                        response = String.format("{\"status\":\"ok\", \"role\":\"cliente\", \"id\":\"%s\", \"data\":%s}", 
+                            id, JsonUtil.clienteToJson(c));
+                    } else {
+                        response = "{\"status\":\"error\", \"message\":\"Usuario no encontrado o credenciales inválidas\"}";
+                        code = 401;
+                    }
                 }
                 else {
                     response = "{\"status\":\"error\", \"message\":\"Usuario no encontrado o credenciales inválidas\"}";
