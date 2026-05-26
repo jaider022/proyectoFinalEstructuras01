@@ -30,31 +30,24 @@ public class AsistenteVirtual {
         
         // 1. Intención: Buscar propiedades
         boolean tieneIntencionBuscar = 
-            textoLimpio.contains("buscar") || 
-            textoLimpio.contains("busco") || 
-            textoLimpio.contains("buscando") || 
-            textoLimpio.contains("quiero") || 
-            textoLimpio.contains("necesito") || 
-            textoLimpio.contains("muestrame") || 
-            textoLimpio.contains("mostrar") || 
-            textoLimpio.contains("ver") || 
-            textoLimpio.contains("ensename") || 
-            textoLimpio.contains("encuentra") || 
-            textoLimpio.contains("lista") || 
-            textoLimpio.contains("listar") || 
-            textoLimpio.contains("catalogo") ||
-            textoLimpio.contains("apartamento") || 
-            textoLimpio.contains("apto") || 
-            textoLimpio.contains("casa") || 
+            textoLimpio.contains("buscar") || textoLimpio.contains("bucar") || textoLimpio.contains("busacar") ||
+            textoLimpio.contains("busco") || textoLimpio.contains("busq") ||
+            textoLimpio.contains("quiero") || textoLimpio.contains("kiero") || textoLimpio.contains("qiero") ||
+            textoLimpio.contains("necesito") || textoLimpio.contains("nesesito") || textoLimpio.contains("nececito") || textoLimpio.contains("nesecito") ||
+            textoLimpio.contains("muestrame") || textoLimpio.contains("mostrar") || 
+            textoLimpio.contains("ver") || textoLimpio.contains("ensename") || 
+            textoLimpio.contains("encuentra") || textoLimpio.contains("lista") || 
+            textoLimpio.contains("apartamento") || textoLimpio.contains("apto") || textoLimpio.contains("apartameto") || textoLimpio.contains("aprtamento") ||
+            textoLimpio.contains("casa") || textoLimpio.contains("caza") ||
             textoLimpio.contains("oficina") || 
             textoLimpio.contains("local") || 
             textoLimpio.contains("lote");
 
         if (tieneIntencionBuscar) {
             String tipoBuscado = "Todos";
-            if (textoLimpio.contains("apto") || textoLimpio.contains("apartamento") || textoLimpio.contains("apartam") || textoLimpio.contains("depa")) {
+            if (textoLimpio.contains("apto") || textoLimpio.contains("apartamento") || textoLimpio.contains("apartameto") || textoLimpio.contains("aprtamento") || textoLimpio.contains("depa")) {
                 tipoBuscado = "Apartamento";
-            } else if (textoLimpio.contains("casa") || textoLimpio.contains("casita")) {
+            } else if (textoLimpio.contains("casa") || textoLimpio.contains("casita") || textoLimpio.contains("caza")) {
                 tipoBuscado = "Casa";
             } else if (textoLimpio.contains("oficina") || textoLimpio.contains("ofic")) {
                 tipoBuscado = "Oficina";
@@ -156,6 +149,21 @@ public class AsistenteVirtual {
 
         if (rol.equals("asesor") && textoLimpio.contains("mis clientes")) {
             return new RespuestaChat("Colega asesor, te recomiendo revisar siempre tu panel principal para ver las visitas pendientes. ¡Mucho exito en tus cierres de hoy!", null);
+        }
+
+        // 5. Agradecimientos
+        if (textoLimpio.contains("gracias") || textoLimpio.contains("agradezco") || textoLimpio.contains("amable") || textoLimpio.contains("excelente") || textoLimpio.contains("super") || textoLimpio.contains("genial")) {
+            return new RespuestaChat("¡Con mucho gusto! Estoy aqui para ayudarte. ¿Hay algo mas en lo que te pueda asesorar?", null);
+        }
+
+        // 6. Afirmaciones / OK / Entendido
+        if (textoLimpio.equals("ok") || textoLimpio.equals("vale") || textoLimpio.equals("listo") || textoLimpio.contains("esta bien") || textoLimpio.contains("de acuerdo") || textoLimpio.contains("entendido") || textoLimpio.equals("perfecto") || textoLimpio.equals("bien") || textoLimpio.equals("si") || textoLimpio.equals("sii")) {
+            return new RespuestaChat("¡Perfecto! Quedo a tu disposicion si necesitas buscar alguna otra propiedad o hacer una consulta extra.", null);
+        }
+
+        // 7. Despedidas
+        if (textoLimpio.contains("adios") || textoLimpio.contains("chao") || textoLimpio.contains("hasta luego") || textoLimpio.contains("nos vemos") || textoLimpio.contains("bye")) {
+            return new RespuestaChat("¡Hasta luego! Vuelve pronto si necesitas ayuda buscando tu inmueble ideal.", null);
         }
 
         return new RespuestaChat("No estoy seguro de entenderte por completo. Recuerda que soy un asistente inmobiliario, intenta decirme: 'Quiero comprar una casa de 2 habitaciones en el norte'.", null);

@@ -1,3 +1,4 @@
+
 package structures;
 
 /**
@@ -25,7 +26,7 @@ public class CustomBST<K extends Comparable<K>, V> {
         // Si la llave a insertar es menor que la actual, viaje a la Lado Izquierdo
         if (key.compareTo(current.getKey()) < 0) {
             current.setLeft(insertRec(current.getLeft(), key, value));
-        } 
+        }
         // Si es mayor, viaje al Lado Derecho
         else if (key.compareTo(current.getKey()) > 0) {
             current.setRight(insertRec(current.getRight(), key, value));
@@ -67,7 +68,9 @@ public class CustomBST<K extends Comparable<K>, V> {
     }
 
     // --- BÚSQUEDA POR RANGO (Req 5.6) ---
-    /** Retorna todos los valores cuya clave está entre minKey y maxKey (inclusive). */
+    /**
+     * Retorna todos los valores cuya clave está entre minKey y maxKey (inclusive).
+     */
     public CustomList<V> rangeQuery(K minKey, K maxKey) {
         CustomList<V> result = new CustomList<>();
         rangeRec(root, minKey, maxKey, result);
@@ -75,8 +78,10 @@ public class CustomBST<K extends Comparable<K>, V> {
     }
 
     private void rangeRec(TreeNode<K, V> node, K minKey, K maxKey, CustomList<V> result) {
-        if (node == null) return;
-        // Si la clave actual es mayor que el mínimo, el subárbol izquierdo puede tener candidatos
+        if (node == null)
+            return;
+        // Si la clave actual es mayor que el mínimo, el subárbol izquierdo puede tener
+        // candidatos
         if (minKey.compareTo(node.getKey()) < 0) {
             rangeRec(node.getLeft(), minKey, maxKey, result);
         }
@@ -84,7 +89,8 @@ public class CustomBST<K extends Comparable<K>, V> {
         if (minKey.compareTo(node.getKey()) <= 0 && maxKey.compareTo(node.getKey()) >= 0) {
             result.add(node.getValue());
         }
-        // Si la clave actual es menor que el máximo, el subárbol derecho puede tener candidatos
+        // Si la clave actual es menor que el máximo, el subárbol derecho puede tener
+        // candidatos
         if (maxKey.compareTo(node.getKey()) > 0) {
             rangeRec(node.getRight(), minKey, maxKey, result);
         }
@@ -111,17 +117,20 @@ public class CustomBST<K extends Comparable<K>, V> {
     }
 
     private TreeNode<K, V> deleteRec(TreeNode<K, V> current, K key) {
-        if (current == null) return null;
+        if (current == null)
+            return null;
 
         if (key.compareTo(current.getKey()) < 0) {
             current.setLeft(deleteRec(current.getLeft(), key));
         } else if (key.compareTo(current.getKey()) > 0) {
             current.setRight(deleteRec(current.getRight(), key));
         } else {
-            // Nodo encontrado! 
+            // Nodo encontrado!
             // Casos 1 y 2: Sin hijos o un solo hijo
-            if (current.getLeft() == null) return current.getRight();
-            if (current.getRight() == null) return current.getLeft();
+            if (current.getLeft() == null)
+                return current.getRight();
+            if (current.getRight() == null)
+                return current.getLeft();
 
             // Caso 3: Dos hijos. Buscamos el sucesor (mínimo del subárbol derecho)
             TreeNode<K, V> successor = findMin(current.getRight());

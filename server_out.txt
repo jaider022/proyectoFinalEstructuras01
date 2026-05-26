@@ -1,0 +1,9 @@
+=== INICIANDO PROPTECH WEB EDITION ===
+
+Precargando datos en las estructuras personalizadas...
+Cargando simulaciones de cierres de negocio...
+Iniciando servidor en puerto 8082...
+Servidor PropTech iniciado en http://localhost:8082
+
+? SISTEMA LISTO Y PROTEGIDO.
+>>> Abre tu navegador en: http://localhost:8082
