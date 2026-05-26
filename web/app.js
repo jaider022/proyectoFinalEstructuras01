@@ -197,6 +197,27 @@ function setupInteractions() {
     if(btnLog) btnLog.onclick = () => {
         document.getElementById('modal-login').style.display = 'flex';
     };
+
+    const btnBackToLanding = document.getElementById('btn-back-to-landing');
+    if (btnBackToLanding) {
+        btnBackToLanding.onclick = () => {
+            document.getElementById('landing-view').style.display = 'flex';
+            document.getElementById('app-container').style.display = 'none';
+            const cbw = document.getElementById('chatbot-widget');
+            if(cbw) cbw.style.display = 'none';
+        };
+    }
+
+    const sidebarLogo = document.querySelector('.sidebar .logo');
+    if (sidebarLogo) {
+        sidebarLogo.style.cursor = 'pointer';
+        sidebarLogo.onclick = () => {
+            document.getElementById('landing-view').style.display = 'flex';
+            document.getElementById('app-container').style.display = 'none';
+            const cbw = document.getElementById('chatbot-widget');
+            if(cbw) cbw.style.display = 'none';
+        };
+    }
     
     const btnLogout = document.getElementById('btn-header-logout');
     if (btnLogout) {
@@ -735,14 +756,27 @@ function setupInteractions() {
             }
 
             // Filtrar inmuebles
-            const filteredProps = globalProperties.filter(p => 
-                (p.codigo && p.codigo.toLowerCase().includes(query)) ||
-                (p.direccion && p.direccion.toLowerCase().includes(query)) ||
-                (p.ciudad && p.ciudad.toLowerCase().includes(query)) ||
-                (p.zona && p.zona.toLowerCase().includes(query)) ||
-                (p.tipo && p.tipo.toLowerCase().includes(query)) ||
-                (p.disponibilidad && p.disponibilidad.toLowerCase().includes(query))
-            );
+            const filteredProps = globalProperties.filter(p => {
+                const matchesQuery = 
+                    (p.codigo && p.codigo.toLowerCase().includes(query)) ||
+                    (p.direccion && p.direccion.toLowerCase().includes(query)) ||
+                    (p.ciudad && p.ciudad.toLowerCase().includes(query)) ||
+                    (p.zona && p.zona.toLowerCase().includes(query)) ||
+                    (p.tipo && p.tipo.toLowerCase().includes(query)) ||
+                    (p.disponibilidad && p.disponibilidad.toLowerCase().includes(query));
+                
+                if (!matchesQuery) return false;
+
+                const isAvailable = (p.disponibilidad || "").toLowerCase() === "disponible";
+                const isQueryType = p.tipo && p.tipo.toLowerCase() === query;
+
+                // Si el query coincide exactamente con el tipo (como cuando se hace click en las tarjetas)
+                // o si el usuario actual es cliente/invitado, solo mostramos los disponibles.
+                if (isQueryType || (currentRole !== 'admin' && currentRole !== 'asesor')) {
+                    return isAvailable;
+                }
+                return true;
+            });
 
             // Filtrar clientes
             const filteredClients = globalClients.filter(c => 
@@ -1096,7 +1130,8 @@ function applyRoleRestrictions() {
         
         const roleBadge = document.getElementById('role-badge');
         if (roleBadge) roleBadge.style.display = 'flex';
-        document.getElementById('role-label').textContent = 'Admin';
+        const roleLabel = document.getElementById('role-label');
+        if (roleLabel) roleLabel.textContent = 'Admin';
 
         console.log("Admin mode active");
     } else if (currentRole === 'asesor') {
@@ -1109,6 +1144,7 @@ function applyRoleRestrictions() {
         guestOnlyElements.forEach(el => el.style.display = 'none');
         loggedInElements.forEach(el => el.style.display = 'block');
         
+        const fabAdmin = document.getElementById('fab-admin');
         if (fabAdmin) fabAdmin.style.display = 'none';
         deleteBtns.forEach(el => el.classList.remove('admin-visible'));
         adminVisibleOnly.forEach(el => el.style.display = 'none');
@@ -1124,7 +1160,8 @@ function applyRoleRestrictions() {
         
         const roleBadge = document.getElementById('role-badge');
         if (roleBadge) roleBadge.style.display = 'flex';
-        document.getElementById('role-label').textContent = 'Asesor';
+        const roleLabel = document.getElementById('role-label');
+        if (roleLabel) roleLabel.textContent = 'Asesor';
         
         // Redirigir a panel asesor si estaban en admin view
         const activeNav = document.querySelector('nav li.active');
@@ -1149,12 +1186,14 @@ function applyRoleRestrictions() {
         
         const roleBadge = document.getElementById('role-badge');
         if (roleBadge) roleBadge.style.display = 'flex';
-        document.getElementById('role-label').textContent = 'Cliente';
+        const roleLabel = document.getElementById('role-label');
+        if (roleLabel) roleLabel.textContent = 'Cliente';
     } else {
         adminElements.forEach(el => el.style.display = 'none');
         document.querySelectorAll('.cliente-only').forEach(el => el.style.display = 'none');
         commercialElements.forEach(el => el.style.display = 'none');
         
+        const fabAdmin = document.getElementById('fab-admin');
         if (fabAdmin) fabAdmin.style.display = 'none';
         deleteBtns.forEach(el => el.classList.remove('admin-visible'));
         adminVisibleOnly.forEach(el => el.style.display = 'none');
@@ -1380,11 +1419,13 @@ function renderStats(props, clients, analitics) {
     if (typeGrid && props) {
         typeGrid.innerHTML = '';
         
-        // Contar por tipo
+        // Contar por tipo (solo disponibles)
         const counts = {};
         props.forEach(p => {
-            const t = p.tipo || 'Otro';
-            counts[t] = (counts[t] || 0) + 1;
+            if ((p.disponibilidad || "").toLowerCase() === "disponible") {
+                const t = p.tipo || 'Otro';
+                counts[t] = (counts[t] || 0) + 1;
+            }
         });
 
         // Crear tarjetas
@@ -2095,26 +2136,37 @@ function renderAsesorDashboard(asesor) {
             const card = document.createElement('div');
             card.className = 'visit-card-compact';
             card.style.background = 'white';
+            
+            const propCode = v.inmueble ? v.inmueble.codigo : '';
+            const propDir = v.inmueble ? v.inmueble.direccion : 'Inmueble';
+            const propCity = v.inmueble ? v.inmueble.ciudad : '';
+            const clientName = v.cliente ? v.cliente.nombre : 'Anónimo';
+            const clientId = v.cliente ? v.cliente.id : '';
+            const estLower = (v.estado || 'pendiente').toLowerCase();
+            const estUpper = (v.estado || 'pendiente').toUpperCase();
+            const estBg = estLower === 'confirmada' ? '#dcfce7' : (estLower === 'cancelada' ? '#fee2e2' : '#fef3c7');
+            const estColor = estLower === 'confirmada' ? '#166534' : (estLower === 'cancelada' ? '#991b1b' : '#92400e');
+            
             card.innerHTML = `
                 <div style="display:flex; justify-content:space-between;">
                     <div class="info">
-                        <h4>${v.inmueble ? v.inmueble.direccion : 'Inmueble'}</h4>
-                        <p>📍 ${v.inmueble ? v.inmueble.ciudad : ''} | 📅 ${v.fecha} | ⏰ ${v.hora}</p>
-                        <p style="font-size:0.8rem; color:var(--accent-color);">Cliente: ${v.cliente ? v.cliente.nombre : 'Anónimo'}</p>
+                        <h4>${propDir}</h4>
+                        <p>📍 ${propCity} | 📅 ${v.fecha} | ⏰ ${v.hora}</p>
+                        <p style="font-size:0.8rem; color:var(--accent-color);">Cliente: ${clientName}</p>
                     </div>
                     <div class="actions-status" style="display:flex; flex-direction:column; gap:5px; align-items:flex-end;">
-                        <div style="font-size:0.75rem; font-weight:bold; padding:3px 8px; border-radius:4px; background:${v.estado.toLowerCase() === 'confirmada' ? '#dcfce7' : (v.estado.toLowerCase() === 'cancelada' ? '#fee2e2' : '#fef3c7')}; color:${v.estado.toLowerCase() === 'confirmada' ? '#166534' : (v.estado.toLowerCase() === 'cancelada' ? '#991b1b' : '#92400e')}; margin-bottom:5px;">
-                            ${v.estado.toUpperCase()}
+                        <div style="font-size:0.75rem; font-weight:bold; padding:3px 8px; border-radius:4px; background:${estBg}; color:${estColor}; margin-bottom:5px;">
+                            ${estUpper}
                         </div>
-                        <button class="secondary-btn" style="padding:4px 8px; font-size:0.75rem;" onclick="openReprogramModal('${v.inmueble.codigo}', '${v.cliente ? v.cliente.id : ''}')">Reagendar</button>
-                        <button class="secondary-btn" style="padding:4px 8px; font-size:0.75rem; border-color:#ef4444; color:#ef4444;" onclick="cancelVisit('${v.inmueble.codigo}', '${v.cliente ? v.cliente.id : ''}')">Cancelar</button>
+                        <button class="secondary-btn" style="padding:4px 8px; font-size:0.75rem;" onclick="openReprogramModal('${propCode}', '${clientId}')">Reagendar</button>
+                        <button class="secondary-btn" style="padding:4px 8px; font-size:0.75rem; border-color:#ef4444; color:#ef4444;" onclick="cancelVisit('${propCode}', '${clientId}')">Cancelar</button>
                     </div>
                 </div>
                 <div style="margin-top: 10px; border-top: 1px dashed #ccc; padding-top: 10px; width: 100%;">
-                    <textarea id="comment-${v.inmueble.codigo}" placeholder="Comentario post-visita..." style="width: 100%; height: 35px; font-size: 0.8rem; border: 1px solid #ccc; border-radius: 4px; padding: 5px;"></textarea>
+                    <textarea id="comment-${propCode}" placeholder="Comentario post-visita..." style="width: 100%; height: 35px; font-size: 0.8rem; border: 1px solid #ccc; border-radius: 4px; padding: 5px;"></textarea>
                     <div style="display:flex; justify-content:space-between; align-items:center; margin-top: 5px;">
-                        <button onclick="analizarSentimiento('${v.inmueble.codigo}')" style="background: linear-gradient(135deg, #10b981 0%, #059669 100%); color:white; border:none; border-radius:4px; padding: 5px 10px; font-size: 0.75rem; cursor:pointer;">🧠 Analizar Sentimiento</button>
-                        <span id="sentiment-result-${v.inmueble.codigo}" style="font-size: 0.75rem; font-weight: bold; padding: 2px 5px; border-radius: 3px;"></span>
+                        <button onclick="analizarSentimiento('${propCode}')" style="background: linear-gradient(135deg, #10b981 0%, #059669 100%); color:white; border:none; border-radius:4px; padding: 5px 10px; font-size: 0.75rem; cursor:pointer;">🧠 Analizar Sentimiento</button>
+                        <span id="sentiment-result-${propCode}" style="font-size: 0.75rem; font-weight: bold; padding: 2px 5px; border-radius: 3px;"></span>
                     </div>
                 </div>
             `;
@@ -2179,10 +2231,10 @@ async function loadAnalitica() {
         if (rankings.vips && rankings.vips.length > 0) {
             rankings.vips.forEach(v => {
                 vipsList.innerHTML += `
-                    <div style="background: var(--bg-secondary); padding: 15px; border-radius: 6px; border-left: 4px solid var(--accent-color);">
-                        <strong style="display: block; font-size: 1.1rem; margin-bottom: 5px;">${v.nombre}</strong>
-                        <span style="font-size: 0.9rem; color: #555;">Busca: ${v.tipo} en ${v.zona}</span>
-                        <div style="margin-top: 5px; font-weight: bold; color: var(--primary-color);">
+                    <div style="background: var(--bg-secondary); padding: 8px 12px; border-radius: 6px; border-left: 4px solid var(--accent-color); margin-bottom: 6px;">
+                        <strong style="display: block; font-size: 0.95rem; margin-bottom: 3px;">${v.nombre}</strong>
+                        <span style="font-size: 0.8rem; color: #555;">Busca: ${v.tipo} en ${v.zona}</span>
+                        <div style="margin-top: 3px; font-weight: bold; color: var(--primary-color); font-size: 0.85rem;">
                             Presupuesto: $${v.presupuesto.toLocaleString()}
                         </div>
                     </div>
@@ -2421,13 +2473,13 @@ async function loadGrafo() {
         } else {
             hotspots.forEach(h => {
                 hotspotsList.innerHTML += `
-                    <div style="background:var(--soft-blue); padding:12px; border-radius:6px; border-left:4px solid var(--primary-color); display:flex; justify-content:space-between; align-items:center; margin-bottom: 5px;">
-                        <div>
+                    <div style="background:var(--soft-blue); padding:6px 10px; border-radius:6px; border-left:4px solid var(--primary-color); display:flex; justify-content:space-between; align-items:center; margin-bottom: 5px;">
+                        <div style="font-size:0.85rem;">
                             <strong>${h.codigo}</strong> - ${h.tipo} en ${h.zona}<br>
-                            <span style="font-size:0.85rem; color:var(--text-muted);">${h.direccion}</span>
+                            <span style="font-size:0.75rem; color:var(--text-muted);">${h.direccion}</span>
                         </div>
-                        <span style="background:var(--primary-color); color:white; padding:4px 10px; border-radius:12px; font-weight:bold; font-size:0.85rem;">
-                            ${h.conexiones} conexiones
+                        <span style="background:var(--primary-color); color:white; padding:2px 8px; border-radius:12px; font-weight:bold; font-size:0.75rem; white-space:nowrap;">
+                            ${h.conexiones} con.
                         </span>
                     </div>
                 `;
@@ -2444,12 +2496,12 @@ async function loadGrafo() {
         } else {
             clientes.forEach(c => {
                 clientesList.innerHTML += `
-                    <div style="background:#f8fafc; padding:10px; border-radius:6px; border:1px solid var(--border-color); display:flex; justify-content:space-between; align-items:center; margin-bottom: 5px;">
-                        <div>
+                    <div style="background:#f8fafc; padding:6px 10px; border-radius:6px; border:1px solid var(--border-color); display:flex; justify-content:space-between; align-items:center; margin-bottom: 5px;">
+                        <div style="font-size:0.85rem;">
                             <strong>${c.nombre}</strong> (${c.id})<br>
-                            <span style="font-size:0.8rem; color:var(--text-muted);">${c.tipo}</span>
+                            <span style="font-size:0.75rem; color:var(--text-muted);">${c.tipo}</span>
                         </div>
-                        <span style="background:var(--soft-blue); color:var(--primary-color); padding:4px 8px; border-radius:12px; font-weight:600; font-size:0.8rem;">
+                        <span style="background:var(--soft-blue); color:var(--primary-color); padding:2px 8px; border-radius:12px; font-weight:600; font-size:0.75rem; white-space:nowrap;">
                             Grado: ${c.conexiones}
                         </span>
                     </div>

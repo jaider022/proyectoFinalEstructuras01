@@ -136,22 +136,28 @@ public class Cliente {
     }
 
     public boolean prefiere(Inmueble inm) {
-        // 1. Presupuesto (precio <= presupuesto del cliente)
-        boolean cumplePresupuesto = inm.getPrecio() <= this.presupuesto;
+        // 1. Presupuesto (precio <= presupuesto del cliente, o presupuesto <= 0 para ignorar el límite)
+        boolean cumplePresupuesto = this.presupuesto <= 0 || inm.getPrecio() <= this.presupuesto;
         
-        // 2. Zona (ignorar mayúsculas y permitir coincidencias parciales)
-        boolean cumpleZona = this.zonasDeInteres != null && 
+        // 2. Zona (ignorar si es nulo, vacío, "cualquiera" o "todos")
+        boolean cumpleZona = this.zonasDeInteres == null || 
+                             this.zonasDeInteres.trim().isEmpty() || 
+                             this.zonasDeInteres.equalsIgnoreCase("cualquiera") || 
+                             this.zonasDeInteres.equalsIgnoreCase("todos") ||
                              this.zonasDeInteres.toLowerCase().contains(inm.getZona().toLowerCase());
         
-        // 3. Tipo (mismo tipo de inmueble, ej. apartamento)
-        boolean cumpleTipo = this.tipoInmuebleDeseado != null && 
+        // 3. Tipo (ignorar si es nulo, vacío, "cualquiera" o "todos")
+        boolean cumpleTipo = this.tipoInmuebleDeseado == null || 
+                             this.tipoInmuebleDeseado.trim().isEmpty() || 
+                             this.tipoInmuebleDeseado.equalsIgnoreCase("cualquiera") || 
+                             this.tipoInmuebleDeseado.equalsIgnoreCase("todos") ||
                              this.tipoInmuebleDeseado.equalsIgnoreCase(inm.getTipo());
                              
         // 4. Disponibilidad (solo inmuebles que estén 'Disponible')
         boolean estaDisponible = "Disponible".equalsIgnoreCase(inm.getDisponibilidad());
         
-        // 5. Habitaciones (mayor o igual al mínimo del cliente)
-        boolean cumpleHabitaciones = inm.getHabitaciones() >= this.minHabitaciones;
+        // 5. Habitaciones (mayor o igual al mínimo del cliente, o <= 0 para ignorar)
+        boolean cumpleHabitaciones = this.minHabitaciones <= 0 || inm.getHabitaciones() >= this.minHabitaciones;
 
         return cumplePresupuesto && cumpleZona && cumpleTipo && estaDisponible && cumpleHabitaciones;
     }

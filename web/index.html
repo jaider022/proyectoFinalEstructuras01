@@ -12,23 +12,45 @@
     <div id="landing-view" class="landing-view">
         <header class="landing-header">
             <div class="landing-logo">
-                <span class="logo-icon">🏠</span>
+                <svg width="42" height="42" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <!-- House Base and Door -->
+                    <path d="M14 20V40H34V20" stroke="#576574" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>
+                    <path d="M21 40V32H27V40" stroke="#576574" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>
+                    <!-- Roof -->
+                    <path d="M8 22L24 16L40 22" stroke="#0b4d8c" stroke-width="4.5" stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
                 <h1>PropTech</h1>
             </div>
             <div class="landing-controls">
-                <button onclick="document.getElementById('modal-register').style.display='flex'" class="secondary-btn">Registrarse</button>
-                <button onclick="document.getElementById('modal-login').style.display='flex'" class="primary-btn">Iniciar Sesión</button>
+                <button onclick="document.getElementById('modal-register').style.display='flex'" class="landing-btn-outline">Registrarse</button>
+                <button onclick="document.getElementById('modal-login').style.display='flex'" class="landing-btn-filled">Iniciar Sesión</button>
             </div>
         </header>
         <div class="landing-hero">
             <div class="hero-box">
-                <h2>Aquí hay un espacio para <span>[tu inmueble]</span></h2>
+                <h2>Aquí encontrarás tu <span>inmueble ideal</span></h2>
                 <p>
                     La plataforma líder en gestión y búsqueda de propiedades con inteligencia de datos.
                 </p>
                 <div style="display: flex; gap: 15px;">
-                    <button onclick="document.getElementById('modal-register').style.display='flex'" class="primary-btn" style="padding: 1rem 2rem; border-radius: 10px;">Empezar ahora</button>
-                    <button onclick="enterAsGuest()" class="secondary-btn" style="padding: 1rem 2rem; border-radius: 10px;">Ver Catálogo</button>
+                    <button onclick="document.getElementById('modal-register').style.display='flex'" class="landing-btn-filled hero-btn">
+                        Empezar ahora
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M12 2L2 7l10 5 10-5-10-5z" />
+                            <path d="M2 17l10 5 10-5" />
+                            <path d="M2 12l10 5 10-5" />
+                            <path d="M12 22V12" />
+                        </svg>
+                    </button>
+                    <button onclick="enterAsGuest()" class="landing-btn-outline hero-btn">
+                        Ver Catálogo
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                            <rect x="3" y="3" width="7" height="7" />
+                            <rect x="14" y="3" width="7" height="7" />
+                            <rect x="14" y="14" width="7" height="7" />
+                            <rect x="3" y="14" width="7" height="7" />
+                        </svg>
+                    </button>
                 </div>
             </div>
             <div class="hero-image">
@@ -42,7 +64,13 @@
         <!-- Sidebar -->
         <aside class="sidebar">
             <div class="logo">
-                <span class="logo-icon">🏠</span>
+                <svg width="32" height="32" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <!-- House Base and Door -->
+                    <path d="M14 20V40H34V20" stroke="#576574" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>
+                    <path d="M21 40V32H27V40" stroke="#576574" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>
+                    <!-- Roof -->
+                    <path d="M8 22L24 16L40 22" stroke="var(--accent-color)" stroke-width="4.5" stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
                 <h1>PropTech</h1>
             </div>
             <nav>
@@ -87,21 +115,22 @@
         <!-- Main Content -->
         <main class="main-content">
             <header>
-                <div class="search-bar" style="display: flex; gap: 10px; width: 100%;">
-                    <input type="text" id="main-search-input" placeholder="Buscar inmuebles por código o palabra clave..." style="flex: 1;">
-                    <button id="btn-advanced-filters" class="secondary-btn" style="white-space: nowrap;">⚙️ Filtros Avanzados</button>
+                <div class="search-bar" style="display: flex; gap: 10px; flex: 1; max-width: 480px; margin-right: 20px;">
+                    <input type="text" id="main-search-input" placeholder="Buscar inmuebles por código o palabra clave...">
+                    <button id="btn-advanced-filters" class="secondary-btn" style="white-space: nowrap; padding: 8px 16px; font-size: 0.9rem; border-radius: 20px;">⚙️ Filtros</button>
                 </div>
                 <div class="user-actions">
-                    <button id="btn-add-prop" class="primary-btn admin-only" style="display:none">+ Nuevo Inmueble</button>
+                    <button id="btn-add-prop" class="primary-btn admin-only" style="display:none; white-space: nowrap; padding: 8px 16px; font-size: 0.9rem; border-radius: 20px;">+ Nuevo Inmueble</button>
                     <div class="user-profile" id="header-user-controls" style="display: flex; gap: 10px; align-items: center;">
-                        <button id="btn-header-register" class="secondary-btn guest-only">Registrarse</button>
-                        <button id="btn-header-login" class="primary-btn guest-only">Iniciar Sesión</button>
+                        <button id="btn-back-to-landing" class="secondary-btn" style="padding: 8px 16px; font-size: 0.9rem; border-radius: 20px; display: flex; align-items: center; gap: 6px; white-space: nowrap;">🏠 Volver a Inicio</button>
+                        <button id="btn-header-register" class="secondary-btn guest-only" style="padding: 8px 16px; font-size: 0.9rem; border-radius: 20px; white-space: nowrap;">Registrarse</button>
+                        <button id="btn-header-login" class="primary-btn guest-only" style="padding: 8px 16px; font-size: 0.9rem; border-radius: 20px; white-space: nowrap;">Iniciar Sesión</button>
                         
                         <div id="role-badge" class="logged-in-only" style="display:none; align-items: center; gap: 8px; background: var(--soft-blue); padding: 6px 14px; border-radius: 20px; border: 1px solid var(--accent-color); color: var(--accent-color);">
                             <span style="font-size: 1.2rem;">👤</span>
                             <span id="role-label" style="font-size: 0.85rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px;"></span>
                         </div>
-                        <button id="btn-header-logout" class="secondary-btn logged-in-only" style="display:none; border-color: #ef4444; color: #ef4444; padding: 8px 16px; font-size: 0.9rem; border-radius: 20px;">Cerrar Sesión</button>
+                        <button id="btn-header-logout" class="secondary-btn logged-in-only" style="display:none; border-color: #ef4444; color: #ef4444; padding: 8px 16px; font-size: 0.9rem; border-radius: 20px; white-space: nowrap;">Cerrar Sesión</button>
                     </div>
                 </div>
             </header>
@@ -153,7 +182,7 @@
 
                     <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-top: 30px;">
                         <!-- Columna Izquierda: Ranking Asesores -->
-                        <div style="background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.05);">
+                        <div class="content-card">
                             <h3 style="margin-bottom: 15px; border-bottom: 2px solid var(--border-color); padding-bottom: 10px;">🏆 Ranking de Asesores</h3>
                             <table style="width: 100%; border-collapse: collapse;">
                                 <thead>
@@ -170,7 +199,7 @@
                         </div>
 
                         <!-- Columna Derecha: Clientes VIP -->
-                        <div style="background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.05);">
+                        <div class="content-card">
                             <h3 style="margin-bottom: 15px; border-bottom: 2px solid var(--border-color); padding-bottom: 10px;">⭐ Clientes de Alta Probabilidad</h3>
                             <div id="ana-vips-list" style="display: flex; flex-direction: column; gap: 10px;">
                                 <!-- Cargado por JS -->
@@ -200,7 +229,7 @@
                 <!-- VISTA 6: SIMULACIÓN DE DEMANDA (REQ 8.3) -->
                 <div id="view-simulacion" class="content-view" style="display:none">
                     <h2 class="section-title">Motor de Proyección y Simulación</h2>
-                    <div style="background: white; padding: 30px; border-radius: var(--radius); box-shadow: var(--shadow); max-width: 600px;">
+                    <div class="content-card" style="max-width: 600px;">
                         <p style="margin-bottom: 20px; color: var(--text-muted);">Proyecta el crecimiento del mercado inmobiliario basándote en la actividad actual del sistema.</p>
                         
                         <div class="form-grid" style="grid-template-columns: 1fr; gap: 20px;">
@@ -239,20 +268,20 @@
                     
                     <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
                         <!-- Zonas -->
-                        <div style="background: white; padding: 20px; border-radius: 8px; box-shadow: var(--shadow);">
+                        <div class="content-card">
                             <h3 style="border-bottom: 2px solid var(--border-color); padding-bottom: 10px; margin-bottom: 15px;">📊 Visitas por Zona</h3>
                             <ul id="rep-zonas-list" style="list-style: none; padding: 0; display: flex; flex-direction: column; gap: 10px;"></ul>
                         </div>
                         
                         <!-- Visitas por Inmueble -->
-                        <div style="background: white; padding: 20px; border-radius: 8px; box-shadow: var(--shadow);">
+                        <div class="content-card">
                             <h3 style="border-bottom: 2px solid var(--border-color); padding-bottom: 10px; margin-bottom: 15px;">👀 Visitas por Inmueble</h3>
                             <ul id="rep-visitas-list" style="list-style: none; padding: 0; display: flex; flex-direction: column; gap: 10px; max-height: 300px; overflow-y: auto;"></ul>
                         </div>
                     </div>
 
                     <!-- Catálogo por Precio -->
-                    <div style="background: white; padding: 20px; border-radius: 8px; box-shadow: var(--shadow); margin-top: 20px;">
+                    <div class="content-card" style="margin-top: 20px;">
                         <h3 style="border-bottom: 2px solid var(--border-color); padding-bottom: 10px; margin-bottom: 15px;">💲 Catálogo Ordenado por Precio (Árbol BST)</h3>
                         <table style="width: 100%; border-collapse: collapse;">
                             <thead>
@@ -276,12 +305,12 @@
 
                     <div style="display:grid; grid-template-columns:1fr 1fr; gap:20px; margin-bottom:25px;">
                         <!-- Hotspot properties -->
-                        <div style="background:white; padding:20px; border-radius:8px; box-shadow:var(--shadow);">
+                        <div class="content-card">
                             <h3 style="margin-bottom:15px; border-bottom:2px solid var(--border-color); padding-bottom:10px;">🔥 Inmuebles más Demandados (Hotspots)</h3>
                             <div id="grafo-hotspots-list" style="display:flex; flex-direction:column; gap:10px; max-height:320px; overflow-y:auto;"></div>
                         </div>
                         <!-- Client degree table -->
-                        <div style="background:white; padding:20px; border-radius:8px; box-shadow:var(--shadow);">
+                        <div class="content-card">
                             <h3 style="margin-bottom:15px; border-bottom:2px solid var(--border-color); padding-bottom:10px;">👥 Actividad de Clientes (Grado)</h3>
                             <div id="grafo-clientes-list" style="display:flex; flex-direction:column; gap:8px; max-height:320px; overflow-y:auto;"></div>
                         </div>
@@ -290,7 +319,7 @@
                     <!-- Interactive analysis tools -->
                     <div style="display:grid; grid-template-columns:1fr 1fr; gap:20px;">
                         <!-- Client mobility analysis -->
-                        <div style="background:white; padding:20px; border-radius:8px; box-shadow:var(--shadow);">
+                        <div class="content-card">
                             <h3 style="margin-bottom:15px; border-bottom:2px solid var(--border-color); padding-bottom:10px;">🔍 Movilidad Comercial de Cliente (BFS)</h3>
                             <p style="font-size:0.85rem; color:var(--text-muted); margin-bottom:12px;">Selecciona un cliente para ver todos los nodos alcanzables desde él en el grafo.</p>
                             <select id="grafo-cli-select" style="width:100%; padding:8px; border:1px solid var(--border-color); border-radius:6px; margin-bottom:10px;">
@@ -300,7 +329,7 @@
                             <div id="grafo-cli-result" style="display:none; padding:10px; border:1px solid var(--border-color); border-radius:4px; background:#f8fafc;"></div>
                         </div>
                         <!-- Property interest map -->
-                        <div style="background:white; padding:20px; border-radius:8px; box-shadow:var(--shadow);">
+                        <div class="content-card">
                             <h3 style="margin-bottom:15px; border-bottom:2px solid var(--border-color); padding-bottom:10px;">🏠 Mapa de Interés por Inmueble</h3>
                             <p style="font-size:0.85rem; color:var(--text-muted); margin-bottom:12px;">Selecciona un inmueble para ver qué clientes están conectados a él en el grafo.</p>
                             <select id="grafo-inm-select" style="width:100%; padding:8px; border:1px solid var(--border-color); border-radius:6px; margin-bottom:10px;">
@@ -326,7 +355,7 @@
                 <!-- VISTA 7: MI PANEL (ASESOR) -->
                 <div id="view-asesor-dashboard" class="content-view" style="display:none;">
                     <h2 class="section-title">Mi Panel de Asesor</h2>
-                    <div id="asesor-personal-info" style="margin-bottom: 20px; background: white; padding: 20px; border-radius: 8px; box-shadow: var(--shadow);">
+                    <div id="asesor-personal-info" class="content-card" style="margin-bottom: 20px;">
                         <!-- Datos cargados por JS -->
                     </div>
                     
@@ -417,17 +446,17 @@
                             </div>
                         </div>
 
-                        <div class="preferences-section" style="grid-column: 1 / -1; background: white; padding: 20px; border-radius: 8px; box-shadow: var(--shadow); margin-top: 20px;">
+                        <div class="preferences-section content-card" style="grid-column: 1 / -1; margin-top: 20px;">
                             <h3 style="margin-bottom: 1.5rem; display: flex; align-items: center; gap: 10px;">⚙️ Mis Preferencias de Búsqueda</h3>
                             <p style="margin-bottom: 15px; font-size: 0.9rem; color: var(--text-muted);">Actualiza tus preferencias para recibir mejores recomendaciones.</p>
-                            <form id="form-update-preferences" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; align-items: center;">
+                            <form id="form-update-preferences" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; align-items: flex-end;">
                                 <div>
-                                    <label style="font-size: 0.85rem; font-weight: 600;">Presupuesto Máx.</label>
-                                    <input type="number" name="pre" id="pref-pre" placeholder="Ej: 3000000" required>
+                                    <label style="font-size: 0.85rem; font-weight: 600; display: block; margin-bottom: 5px;">Presupuesto Máx.</label>
+                                    <input type="number" name="pre" id="pref-pre" placeholder="Ej: 3000000" style="margin-bottom: 0;" required>
                                 </div>
                                 <div>
-                                    <label style="font-size: 0.85rem; font-weight: 600;">Zona de Interés</label>
-                                    <select name="zon" id="pref-zon" required>
+                                    <label style="font-size: 0.85rem; font-weight: 600; display: block; margin-bottom: 5px;">Zona de Interés</label>
+                                    <select name="zon" id="pref-zon" style="margin-bottom: 0;" required>
                                         <option value="Norte">Norte</option>
                                         <option value="Chapinero">Chapinero</option>
                                         <option value="Colina">Colina</option>
@@ -436,8 +465,8 @@
                                     </select>
                                 </div>
                                 <div>
-                                    <label style="font-size: 0.85rem; font-weight: 600;">Tipo de Inmueble</label>
-                                    <select name="itm" id="pref-itm" required>
+                                    <label style="font-size: 0.85rem; font-weight: 600; display: block; margin-bottom: 5px;">Tipo de Inmueble</label>
+                                    <select name="itm" id="pref-itm" style="margin-bottom: 0;" required>
                                         <option value="Apartamento">Apartamento</option>
                                         <option value="Casa">Casa</option>
                                         <option value="Oficina">Oficina</option>
@@ -445,11 +474,12 @@
                                     </select>
                                 </div>
                                 <div>
-                                    <label style="font-size: 0.85rem; font-weight: 600;">Mín. Habitaciones</label>
-                                    <input type="number" name="hab" id="pref-hab" placeholder="Ej: 2" required>
+                                    <label style="font-size: 0.85rem; font-weight: 600; display: block; margin-bottom: 5px;">Mín. Habitaciones</label>
+                                    <input type="number" name="hab" id="pref-hab" placeholder="Ej: 2" style="margin-bottom: 0;" required>
                                 </div>
-                                <div style="display: flex; align-items: flex-end;">
-                                    <button type="submit" class="secondary-btn" style="height: 42px; width: 100%;">Actualizar Preferencias</button>
+                                <div>
+                                    <label style="display: block; font-size: 0.85rem; margin-bottom: 5px; visibility: hidden;">&nbsp;</label>
+                                    <button type="submit" class="secondary-btn" style="width: 100%; padding: 12px 20px; font-size: 0.95rem; line-height: 1.2; border-radius: 10px; height: auto; box-sizing: border-box; white-space: nowrap;">Actualizar Preferencias</button>
                                 </div>
                             </form>
                         </div>
@@ -471,23 +501,23 @@
                 <input type="text" name="tel" placeholder="Teléfono" required>
                 
                 <h3 style="margin-top: 15px; font-size: 1rem; border-top: 1px solid #ddd; padding-top: 10px;">Preferencias de Búsqueda</h3>
-                <input type="number" name="pre" placeholder="Presupuesto Máximo ($)" required>
-                <select name="zon" required>
-                    <option value="" disabled selected>Zona de Interés...</option>
+                <input type="number" name="pre" placeholder="Presupuesto Máximo ($) (Opcional)">
+                <select name="zon">
+                    <option value="" selected>Zona de Interés (Cualquiera)</option>
                     <option value="Norte">Norte</option>
                     <option value="Chapinero">Chapinero</option>
                     <option value="Colina">Colina</option>
                     <option value="Centro">Centro</option>
                     <option value="Sur">Sur</option>
                 </select>
-                <select name="itm" required>
-                    <option value="" disabled selected>Tipo de Inmueble...</option>
+                <select name="itm">
+                    <option value="" selected>Tipo de Inmueble (Cualquiera)</option>
                     <option value="Apartamento">Apartamento</option>
                     <option value="Casa">Casa</option>
                     <option value="Oficina">Oficina</option>
                     <option value="Local">Local</option>
                 </select>
-                <input type="number" name="hab" placeholder="Mínimo de habitaciones" required>
+                <input type="number" name="hab" placeholder="Mínimo de habitaciones (Opcional)">
                 
                 <button type="submit" class="primary-btn" style="margin-top: 15px;">Comenzar a Explorar</button>
             </form>

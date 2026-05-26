@@ -354,11 +354,24 @@ public class PropTechServer {
         public void handle(HttpExchange exchange) throws IOException {
             java.util.Map<String, String> p = getQueryParams(exchange.getRequestURI().getQuery());
             try {
-                int minHab = p.get("minHab") != null ? Integer.parseInt(p.get("minHab")) : 0;
+                int minHab = 0;
+                if (p.get("minHab") != null && !p.get("minHab").trim().isEmpty()) {
+                    minHab = Integer.parseInt(p.get("minHab").trim());
+                } else if (p.get("hab") != null && !p.get("hab").trim().isEmpty()) {
+                    minHab = Integer.parseInt(p.get("hab").trim());
+                }
+
+                double pre = 0.0;
+                if (p.get("pre") != null && !p.get("pre").trim().isEmpty()) {
+                    pre = Double.parseDouble(p.get("pre").trim());
+                }
+
+                String zon = (p.get("zon") != null && !p.get("zon").trim().isEmpty()) ? p.get("zon").trim() : "Cualquiera";
+                String itm = (p.get("itm") != null && !p.get("itm").trim().isEmpty()) ? p.get("itm").trim() : "Cualquiera";
                 String estBusq = p.get("estBusq") != null ? p.get("estBusq") : "Activo";
 
                 Cliente c = new Cliente(p.get("id"), p.get("nom"), p.get("cor"), p.get("tel"), p.get("tip"), 
-                    Double.parseDouble(p.get("pre")), p.get("zon"), p.get("itm"), minHab, estBusq);
+                    pre, zon, itm, minHab, estBusq);
                 sistema.registrarCliente(c);
                 sendResponse(exchange, "{\"status\":\"ok\"}", 200);
             } catch (Exception e) {
