@@ -7,9 +7,17 @@ import controllers.PropTechSystem;
 public class AsistenteVirtual {
 
     private PropTechSystem sistema;
+    private GeminiService gemini;
+    
+    // Interruptor de seguridad. Cambiar a 'true' para habilitar Gemini IA.
+    // Recuerda configurar tu API Key en GeminiService.java
+    private static final boolean USAR_GEMINI = true; 
 
     public AsistenteVirtual(PropTechSystem sistema) {
         this.sistema = sistema;
+        if (USAR_GEMINI) {
+            this.gemini = new GeminiService();
+        }
     }
 
     private String normalizar(String str) {
@@ -127,6 +135,20 @@ public class AsistenteVirtual {
             String nombreRol = rol.substring(0, 1).toUpperCase() + rol.substring(1);
             if (rol.equals("guest")) nombreRol = "Invitado";
             return new RespuestaChat("Actualmente he identificado que estas conectado con el rol de: **" + nombreRol + "**.", null);
+        }
+
+        // Integración con Gemini IA para preguntas generales y conversación fluida
+        if (USAR_GEMINI) {
+            try {
+                if (gemini == null) {
+                    gemini = new GeminiService();
+                }
+                // Enviamos el mensaje original completo para que Gemini entienda la intención y contexto
+                String respuestaIA = gemini.enviarMensaje(textoOriginal);
+                return new RespuestaChat(respuestaIA, null);
+            } catch (Exception e) {
+                System.out.println("Error al conectar con Gemini: " + e.getMessage() + ". Usando respuestas locales.");
+            }
         }
 
         // 3. Respuestas Generales y Saludos Personalizados
